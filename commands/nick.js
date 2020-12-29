@@ -60,8 +60,6 @@ module.exports = {
               e = e + args[i] + " ";
             }
           }
-          e = e.replace(" ","")
-          reason = reason.replace(" ","")
           args[1] = e;
           args[2] = reason;
           console.log(reason);
