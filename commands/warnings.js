@@ -21,9 +21,7 @@ module.exports = {
   name: "warnings",
   description: "views those idiot's warnings",
  async execute(message,args,Discord,database) {
-   if(!message.member.id == "432345618028036097"){
-     return message.reply("hey there! only the stupid bot developer can run this.")
-   }
+  
    if(!message.member.hasPermission('KICK_MEMBERS')) {message.reply('You must have the permission `KICK_MEMBERS`.'); return message.delete()}
      if(!args[0]){
        return message.reply('uh oh spaghettios')
