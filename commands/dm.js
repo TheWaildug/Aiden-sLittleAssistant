@@ -7,7 +7,7 @@ async function GetMember(guild, id) {
 module.exports = {
     name: "dm",
     description: "dms people",
-    execute(message,args){
+    async execute(message,args){
         if(!message.member.hasPermission(`MANAGE_MESSAGES`)){
             return message.reply("You must have the permission `MANAGE_MESSAGES`")
         }

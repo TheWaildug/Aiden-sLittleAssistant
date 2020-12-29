@@ -2,7 +2,7 @@ const Discord = require("discord.js")
 module.exports = {
     name: "lockdown",
     description: "locks all channels",
-    execute(message,args){
+   async execute(message,args){
         console.log("lockdown command sent.");
 
         const channels = message.guild.channels.cache.filter(c => c.type == "text");
