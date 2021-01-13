@@ -12,6 +12,7 @@ const { setTimeout } = require("timers");
 const keepAlive = require('./server');
 const fetch = require('node-fetch')
 const ytdl = require('ytdl-core')
+const redditFetch = require("reddit-fetch")
 var servers = {}
 const FF000 = "#FF0000"
 const { ReactionRoleManager } = require
@@ -20,6 +21,7 @@ var on = false
 const quotes = require('./values/quotes')
 const facts = require('./values/facts')
 const aidens = require('./values/aiden')
+
 const reactionRoleManager = new ReactionRoleManager(client, {
     storage: true, // Enable reaction role store in a Json file
     path: __dirname + '/roles.json', // Where will save the roles if store is enabled
@@ -112,9 +114,9 @@ async function getData(key){
 
 
 client.on("ready", async () => {
-  const status = await getData("Status")
-  console.log("I am ready Aiden!");
-    client.user.setActivity(status, {
+
+  console.log("I am ready Aiden!"); 
+    client.user.setActivity("aiden smells", {
   type: "STREAMING",
   url: "https://www.twitch.tv/wainked"
 });
@@ -132,6 +134,9 @@ function iscool(id){
     return true
   }
   if(id == '717149032753004625'){
+    return true
+  }
+  if(id == "745325943035396230"){
     return true
   }
   return false
@@ -190,6 +195,7 @@ function isbypasses(user) {
 
 client.on("message", message => {
  const args = message.content.split(" ");
+
  if (message.content.toLowerCase().includes("aiden")) {
     if (!message.author.bot) {
       if(message.content.toLowerCase().includes('!aiden')){
@@ -218,7 +224,7 @@ client.on("message", message => {
   }
   }}
 
- 
+
  if(message.guild != null){for (var i = 0; i < asked.length; i++) {
     if (
       message.content.toLowerCase().includes(asked[i]) &&
@@ -239,7 +245,8 @@ client.on("message", message => {
   for (var i = 0; i < args.length; i++) {
 
        if(args[i].toLowerCase() == 'ok' || args[i].toLowerCase() == "okay" || args[i].toLowerCase() == "k"){
-  if(!message.author.bot){message.react('🆗')}
+        
+  {message.react('🆗')}
 }
 if(args[i].toLowerCase() == "bro" || args[i].toLowerCase() == "bruh"){
   if(!message.author.bot){
@@ -251,8 +258,8 @@ if(args[i].toLowerCase() == "bro" || args[i].toLowerCase() == "bruh"){
 }
     
 }
-   
-  for (var w = 0; i < slurs.length; i++) {
+  
+  for (var w = 0; w < slurs.length; w++) {
     
    if (message.content.toLowerCase().includes(slurs[w]))  {
   
@@ -279,8 +286,8 @@ if(args[i].toLowerCase() == "bro" || args[i].toLowerCase() == "bruh"){
     }
   }
   
-  for (var w = 0; i < swears.length; i++) {
-    var continu = true;
+  for (let w = 0; w < swears.length; w++) {
+    let continu = true;
     if (message.content.toLowerCase().includes(swears[w]))   {
       
       if (message.member.bot) {
@@ -388,7 +395,7 @@ if(message.guild == null){
       
      var peerams = {
          "username": "CHAT LOGS", // the name of the webhook
-    "avatar_url": "https://cdn.discordapp.com/avatars/755537335327916114/52aa8f1b411a325a137274327bf2ed8f.png?size=512",
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
 
   "embeds": [exampleEmbed
 ]
@@ -725,7 +732,7 @@ async function kick(message, args) {
 
 client.on("message", async message => {
    if(message.guild == null){
-    if(iscool(message.author.id)){
+    if(message.author.bot){
       return;
     }
     if(message.author.id == "772834188189630465"){
@@ -741,7 +748,7 @@ client.on("message", async message => {
         console.log(att.url)
       var params = {
     "username": "DM LOGS", // the name of the webhook
-    "avatar_url": "https://cdn.discordapp.com/avatars/755537335327916114/52aa8f1b411a325a137274327bf2ed8f.png?size=512",
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
     "content": `New attachment from <@${member.id}>`,
   "embeds": [{
     "image": {
@@ -774,7 +781,7 @@ client.on("message", async message => {
       
 var params = {
     username: "DM LOGS", // the name of the webhook
-    avatar_url: "https://cdn.discordapp.com/avatars/755537335327916114/52aa8f1b411a325a137274327bf2ed8f.png?size=512",
+    avatar_url: "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
     embeds: [exampleEmbed]
 }
       
@@ -973,31 +980,95 @@ console.log(creation)
 console.log(joined)
    const roles = mentionmember.roles.cache.map(role => role.position).sort()
     var i;
+    var rolenum = 0
     for (i = 0; i < roles.length; i++) {
       const role = await message.guild.roles.cache.find(r => r.position == roles[i])
-      console.log(role.name)
-      console.log(role.position)
-      rolemap = rolemap + " <@&" + role.id + ">,"
+      if(role.name != "@everyone"){
+        rolenum++
+rolemap = rolemap + " <@&" + role.id + ">,"
+      }
+      
     }
     const Embed = new Discord.MessageEmbed()
       .setTitle(`Information for ${mentionmember.user.tag}`)
       .setDescription(
+
         `Here is the information I could find for <@${mentionmember.id}>:`)
        .addFields(
             { name: 'Account creation date:', value: `${creation}` },
              {name: "Joined:",value: `${joined}`},
             {name: 'Roles:', value: `${rolemap}`},
+            {name: "Role Amount:", value: `${rolenum}`}
            
         )
+        rolenum = 0
      message.channel.send(Embed)
   }else if(command == "rr"){
     client.Commands.get('reactionroles').execute(message,args,reactionRoleManager)
   }else if(command == "meme"){
     console.log('meme command sent')
     client.Commands.get("meme").execute(message,args)
-  }else if(command == "reddit"){
-    console.log('ew a redditor')
-    client.Commands.get('reddit').execute(message,args)
+  }
+    else if(command == "reddit"){
+     
+      console.log(`redit ${message.member.id}`)
+      if(args[0]){
+        let reddit = args[0].replace("r/","")
+        redditFetch({
+
+          subreddit: reddit,
+          sort: 'hot',
+          allowNSFW: message.channel.nsfw,
+          allowModPost: false,
+          allowCrossPost: false,
+          allowVideo: false
+      
+      }).then(post => {
+        console.log(post.url)
+      
+            const embed = new Discord.MessageEmbed()
+        .setTitle(`${post.title} in r/${post.subreddit} by u/${post.author_fullname}`)
+        .setURL(`https://reddit.com${post.permalink}`)
+        .setDescription(`!reddit`)
+        .setColor("RANDOM")
+        .attachFiles(post.url)
+        .setTimestamp()
+       
+          return message.channel.send(embed);
+
+      }).catch(error => {
+        console.warn("Error: " + error)
+        return message.reply("Something went wrong: `" + error + "`")
+       
+        })
+      }else{redditFetch({
+  
+          subreddit: 'all',
+          sort: 'hot',
+          allowNSFW: message.channel.nsfw,
+          allowModPost: false,
+          allowCrossPost: false,
+          allowVideo: false
+      
+      }).then(post => {
+        console.log(post.url)
+        
+            const embed = new Discord.MessageEmbed()
+        .setTitle(`${post.title} in r/${post.subreddit} by u/${post.author_fullname}`)
+        .setURL(`https://reddit.com${post.permalink}`)
+        .setDescription(`!reddit`)
+        .setColor("RANDOM")
+        .attachFiles(post.url)
+        .setTimestamp()
+       
+          return message.channel.send(embed);
+       
+      }).catch(error => {
+        console.warn("Error: " + error)
+        return message.reply("Something went wrong: `" + error + "`")
+       
+        })
+      }
   }else if(command == "status"){
 if(!iscool(message.member.id)){
   return message.reply("**no.**")
@@ -1210,7 +1281,36 @@ if(!message.member.hasPermission("MANAGE_MESSAGES")){
     console.log(msg);
     channel.send(msg);
     message.reply("Successfully sent a message to <#" + channel.id + ">");
-  } else if (command === "pin") {
+  } else if(command == "eval") {
+       if(message.member.id != "432345618028036097") {return message.delete()}
+    
+      let code = message.content.split(" ").slice(1).join(" ")
+      console.log(`Evaluate ${message.guild.id}`)
+      console.log(`Evaluate ${message.member.id}`)
+      let evaluated
+       
+    try {
+      evaluated = await eval(`(async () => {return ${code}})()`);
+      console.log(evaluated)
+      const embed = new Discord.MessageEmbed()
+            .setTitle(`Evaluation`)
+            .setDescription(`Evaluated in *${Date.now() - message.createdTimestamp + " ms"}.*`)
+            .addField(`Input`,"```js\n" + code + "```")
+            .addField(`Output`,"```js\n" + evaluated + "```")
+            .setTimestamp()
+            return message.channel.send(`<@${message.member.id}>`,embed);
+    } catch (e) {
+      console.log(e)
+          const embed = new Discord.MessageEmbed()
+          .setTitle(`Evaluation`)
+          .setDescription(`Error`)
+          .addField(`Input`,"```js\n" + code + "```")
+          .addField(`Error`,"```" + e + "```")
+          .setTimestamp()
+          return message.channel.send(`<@${message.member.id}>`,embed);
+
+    }
+          }else if (command === "pin") {
 
     var cont = true;
     console.log("pin command sent");
@@ -1555,95 +1655,7 @@ message.delete()
   
  
  } else if (command === "unlock") {
-   if(!message.member.hasPermission("MANAGE_MESSAGES")){
-      return message.reply("come back to be when you have the permission `MANAGE_MESSAGES`")
-    }
-    console.log("unlock em down");
-    var channel;
-
-    var cont = true;
-    var yes = true;
-    if (message.mentions.channels.first()) {
-      channel = message.mentions.channels.first();
-    } else {
-      channel = message.channel.guild.channels.cache.find(
-        r => r.id === args[0]
-      );
-    }
-    if (!channel) {
-      message.reply("please # a channel or enter its ID .");
-      cont = false;
-    }
-    if (cont == false) {
-      return;
-    }
-    console.log(channel.name);
-    var i;
-    var e = "";
-    for (i = 0; i < args.length; i++) {
-      if (i >= "1") {
-        e = e + args[i] + " ";
-      }
-    }
-    args[1] = e;
-    console.log(args[1]);
-    const everyone = message.guild.roles.cache.find(
-      r => r.name === "@everyone"
-    );
-    if (!args[1]) {
-      args[1] = "This channel has been unlocked. You can now chat here.";
-    }
-    let canchat = channel.permissionsFor(everyone).serialize();
-    if (canchat.SEND_MESSAGES == null || canchat.SEND_MESSAGES == true) {
-      yes = false;
-      cont = false;
-      return message.reply("bro they already can chat here.");
-    }
-    const perms = message.member.permissionsIn(channel).toArray();
-    if (cont == false) {
-      return;
-    }
-    perms.forEach(function(item, index, array) {
-      if (yes === false) {
-        return;
-      }
-      if (item === "MANAGE_MESSAGES") {
-        console.log("perhaps");
-        yes = false;
-        const everyone = message.channel.guild.roles.cache.find(
-          r => r.name === "@everyone"
-        );
-        channel
-          .updateOverwrite(
-            everyone,
-            {
-              SEND_MESSAGES: null
-            },
-            `This has been changed by ${message.member.user.tag}`
-          )
-          .catch(error => {
-            console.warn("Error " + error);
-            cont = false;
-            return message.reply("Something went wrong! `" + error + "`");
-          })
-          .then(() => {
-            message.reply(
-              "successfully unlocked the channel <#" + channel.id + ">"
-            );
-            const embed = new Discord.MessageEmbed()
-              .setTitle("This channel has been unlocked.")
-              .setColor(FF000)
-              .setDescription(args[1]);
-            channel.send(embed);
-            message.delete()
-            return;
-          });
-      }
-    });
-    if (yes == true) {
-      console.log("just no");
-      return message.reply("dude you cannot do this! ");
-    }
+   client.Commands.get("unlock").execute(message,args)
   } else if(command == "faq"){
     console.log('faq command sent')
     if(!args[0]){
@@ -2002,6 +2014,6 @@ client.on("guildMemberAdd", async member => {
     }
 });
 
-keepAlive();
+
 client.login(process.env.TOKEN)
-  
+  keepAlive();

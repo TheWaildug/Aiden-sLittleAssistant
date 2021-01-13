@@ -3,8 +3,13 @@ module.exports = {
     name: "lock",
     description: "locks channels",
     async execute(message,args){
+        if(!message.member.hasPermission(`MANAGE_CHANNELS`)){
+            return message.delete();
+        }
         var channel;
-
+        if(!message.guild.me.hasPermission(`MANAGE_CHANNELS`)){
+          return message.channel.send("I do not have the correct permissions. Please make sure I have the `MANAGE_CHANNELS` permission enabled in the channel you want to lock and under the role settings.");
+       }
         var cont = true;
         if (message.mentions.channels.first()) {
           channel = message.mentions.channels.first();
@@ -41,13 +46,14 @@ module.exports = {
         if (!canchat.SEND_MESSAGES) {
           yes = false;
           cont = false;
-          return message.reply("bro they already can't chat here.");
+          return message.reply("They already can't chat here.");
         }
+        
         const perms = message.member.permissionsIn(channel).toArray();
     
         perms.forEach(function(item, index, array) {
-          console.log(item, index);
-          if (item === "MANAGE_MESSAGES") {
+          
+          if (item === "MANAGE_CHANNELS") {
             console.log("idk man");
             yes = true;
             const everyone = message.channel.guild.roles.cache.find(
@@ -72,7 +78,7 @@ module.exports = {
                 );
                 const embed = new Discord.MessageEmbed()
                   .setTitle("This channel has been locked.")
-                  .setColor(FF000)
+                  .setColor("RANDOM")
                   .setDescription(args[1]);
                 channel.send(embed);
                 message.delete()

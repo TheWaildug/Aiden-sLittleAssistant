@@ -28,6 +28,7 @@
     "ms": "^2.1.2",
     "node-fetch": "^2.6.1",
     "opusscript": "0.0.7",
+    "reddit-fetch": "^1.5.1",
     "timers": "^0.1.1",
     "ytdl-core": "^4.1.0"
   },
