@@ -37,7 +37,7 @@ module.exports = {
    
    if(!message.member.hasPermission('KICK_MEMBERS')) {message.reply('You must have the permission `KICK_MEMBERS`.'); return message.delete()}
         
-        if(!args[0]) return message.channel.send('something went wrong uh oh')
+        if(!args[0]) return message.channel.send('yeah sure I will mute invisible man.')
 
      var cont = true;
   var memberto, mentionmember;
@@ -67,19 +67,11 @@ module.exports = {
     console.log("higher");
     return message.reply("This user has an equal or higher role.");
   }
-    var i;
-  var reason = "";
-  var time
-  for (i = 0; i < args.length; i++) {
-    console.log(args[i]);
-    if(i >= "2"){
-      if(reason != ""){
- reason = reason + " " + args[i]
-      }else{
-        reason = args[i]
-      }
-    }
-  }
+    
+  let reason = message.content.split(" ").slice(3).join(" ")
+ 
+ let time 
+ 
   time = args[1]  
   if(!args[1]) return message.reply('bro I need some time (s = seconds, m = minutes, h = hours, etc.')
    if(!args[2]) message.reply('bro have a reason!')
@@ -100,16 +92,19 @@ module.exports = {
                 { name: 'Offender', value: `<@${mentionmember.id}>` },
                 { name: "Sender:", value: `<@${message.member.id}>` },
                 { name: 'Reason: ', value: `${args[2]}`},   
-                { name: 'Time: ', value: `${ms(ms(time), { long: true })}`}  
+                { name: 'Time: ', value: `${ms(ms(time), { long: true })}`},
+                 
             )
             .setTimestamp()
             .setColor('ff0000');
             if(mentionmember.roles.cache.some(role => role.name === 'Muted')) return message.reply("This user is already muted!");
             mentionmember.roles.add(muterole,`Muted by ${message.member.user.tag} with the reason ${args[2]} for ${ms(ms(time), { long: true })}`)
-             setData(`Guild-${message.channel.guild.id}-IsMuted-${mentionmember.id}`,"true",database)
+            const release = Date.now() + ms(time)
+            setData(`Guild-${message.channel.guild.id}-MuteMS-${mentionmember.id}`,String(release),database)
+             setData(`Guild-${message.channel.guild.id}-IsMuted-${mentionmember.id}`,"true",database)   
             console.log(`Muted ${mentionmember.user.tag}for ${ms(ms(time), { long: true })} by ${message.member.user.tag} Reason: ${args[2]}`)
             message.channel.send(`Successfully muted <@${mentionmember.id}> for ${ms(ms(time), { long: true })}. Reason: ${args[2]}`).then(msg => {
-              msg.delete(10000)
+              msg.delete({timeout: 10000})
             })
             message.delete()
             mentionmember.send(`You have been muted in ${message.guild.name} for ${ms(ms(time), { long: true })}. Reason: ${args[2]}`)
@@ -120,25 +115,8 @@ module.exports = {
             })
             }
             
-               var id = mentionmember.id
-    
-            setTimeout(async function(){
-              if(getData(`Guild-${message.channel.guild.id}-IsMuted-${id}`,database) != null){
-  if(GetMember(message.guild,id)){
-                console.log('Trueeeee')
-                
-                mentionmember.roles.remove(muterole,"Auto Unmute");
-                
-              
-            }
-            const url = await getData(`Guild-${message.guild.id}-MuteMessage-${mentionmember.id}`,database)
-                  removeData(`Guild-${message.channel.guild.id}-IsMuted-${id}`,database)
-                  
-                if(channel){channel.send(`Auto Unmuted <@${id}>. Message URL: ${url}`)};
-                console.log(`Auto Unmuted ${mentionmember.displayName}`)
-              }
-            
-            }, ms(time));
+             
+           
   
   }
 }

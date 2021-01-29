@@ -48,13 +48,7 @@ module.exports = {
   if(!mentionmember){
     return message.reply('bro you need a user to view warnings')
   }
- if (
-    mentionmember.roles.highest.position >= message.member.roles.highest.position
-  ) {
-    console.log("higher");
-    return message.reply("This user has an equal or higher role.");
-  }
-   
+ 
   const warnings = await getData(`Guild-${message.guild.id}-Warnings-${mentionmember.id}`,database)
   console.log(warnings)
   if(warnings == null){
@@ -69,7 +63,7 @@ module.exports = {
             .setTimestamp()
             .setColor('ff0000')
      for (i = 1; i <= warnings.length; i++){
-  var warning = await getData(`Guild-${message.guild.id}-Warning${i}-${mentionmember.id}`,database)
+  let warning = await getData(`Guild-${message.guild.id}-Warning${i}-${mentionmember.id}`,database)
      console.log(warnings + warning)
   exampleEmbed.addField(`Warning #${i}`, warning)
 }message.channel.send(exampleEmbed)       

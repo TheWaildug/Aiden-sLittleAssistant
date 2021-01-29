@@ -1,5 +1,6 @@
 const swears = [
   "boob",
+  "boobies",
   "slut",
   "whore",
   "sex",

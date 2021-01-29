@@ -6,14 +6,20 @@ module.exports = {
         if(!message.member.hasPermission("MANAGE_CHANNELS")){
             return message.delete();
           }
-          if(!message.guild.me.hasPermission(`MANAGE_CHANNELS`)){
-            return message.channel.send("I do not have the correct permissions. Please make sure I have the `MANAGE_CHANNELS` permission enabled in the channel you want to lock and under the role settings.");
-         }
+          
           console.log("unlock em down");
-          var channel;
+        let oh = false
+        if(!args[0]){
+          args[0] = message.channel.id
+          oh = true
+        }else if(!args[0].startsWith("<#")){
+          oh = true
+          args[0] = message.channel.id
+        }
+          let channel;
       
-          var cont = true;
-          var yes = true;
+          let cont = true;
+          let yes = true;
           if (message.mentions.channels.first()) {
             channel = message.mentions.channels.first();
           } else {
@@ -29,22 +35,30 @@ module.exports = {
             return;
           }
           console.log(channel.name);
-          var i;
-          var e = "";
-          for (i = 0; i < args.length; i++) {
-            if (i >= "1") {
-              e = e + args[i] + " ";
-            }
-          }
+  
+         let e = " "
+    if(oh == false){
+      if(args[1]){
+          e = "Reason: " + message.content.split(" ").slice(2).join(" ")
+      }
+    }else if(oh == true){
+      if(args[0]){
+ e = "Reason: " + message.content.split(" ").slice(1).join(" ")
+      }
+  
+    }
+    if(e == "Reason: "){
+      e = " "
+    }
+       
           args[1] = e;
           console.log(args[1]);
           const everyone = message.guild.roles.cache.find(
             r => r.name === "@everyone"
           );
-          if (!args[1]) {
-            args[1] = "This channel has been unlocked. You can now chat here.";
-          }
+         
           let canchat = channel.permissionsFor(everyone).serialize();
+          console.log(canchat.SEND_MESSAGES)
           if (canchat.SEND_MESSAGES == null || canchat.SEND_MESSAGES == true) {
             yes = false;
             cont = false;
@@ -69,7 +83,7 @@ module.exports = {
                 .updateOverwrite(
                   everyone,
                   {
-                    SEND_MESSAGES: null
+                    SEND_MESSAGES: true
                   },
                   `This has been changed by ${message.member.user.tag}`
                 )
@@ -79,13 +93,13 @@ module.exports = {
                   return message.reply("Something went wrong! `" + error + "`");
                 })
                 .then(() => {
-                  message.reply(
-                    "Successfully unlocked the channel <#" + channel.id + ">"
-                  );
+                  
                   const embed = new Discord.MessageEmbed()
-                    .setTitle("This channel has been unlocked.")
-                    .setColor("RANDOM")
-                    .setDescription(args[1]);
+                  .setTitle("This channel has been unlocked by a staff member.")
+                    .setColor("FF0000")
+                    .setDescription(`This channel has been unocked. You can now chat here. ${args[1]}`)
+                    .setFooter(`Unlocked by ${message.author.tag}`)
+                    .setTimestamp()
                   channel.send(embed);
                   message.delete()
                   return;

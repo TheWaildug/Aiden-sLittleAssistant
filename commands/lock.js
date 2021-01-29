@@ -6,11 +6,17 @@ module.exports = {
         if(!message.member.hasPermission(`MANAGE_CHANNELS`)){
             return message.delete();
         }
-        var channel;
-        if(!message.guild.me.hasPermission(`MANAGE_CHANNELS`)){
-          return message.channel.send("I do not have the correct permissions. Please make sure I have the `MANAGE_CHANNELS` permission enabled in the channel you want to lock and under the role settings.");
-       }
-        var cont = true;
+        let oh = false
+        if(!args[0]){
+          args[0] = message.channel.id
+          oh = true
+        }else if(!args[0].startsWith("<#")){
+          oh = true
+          args[0] = message.channel.id
+        }
+        let channel;
+
+        let cont = true;
         if (message.mentions.channels.first()) {
           channel = message.mentions.channels.first();
         } else {
@@ -26,24 +32,33 @@ module.exports = {
           return;
         }
         console.log(channel.name);
-        var i;
-        var e = "";
-        for (i = 0; i < args.length; i++) {
-          if (i >= "1") {
-            e = e + args[i] + " ";
-          }
-        }
+
+   let e = " "
+    if(oh == false){
+      if(args[1]){
+          e = "Reason: " + message.content.split(" ").slice(2).join(" ")
+      }
+    }else if(oh == true){
+      if(args[0]){
+ e = "Reason: " + message.content.split(" ").slice(1).join(" ")
+      }
+  
+    }
+    
+    if(e == "Reason: "){
+      e = " "
+    }
+        
         args[1] = e;
-        var yes = false;
+        let yes = false;
         console.log(args[1]);
         const everyone = message.guild.roles.cache.find(
           r => r.name === "@everyone"
         );
-        if (!args[1]) {
-          args[1] = "This channel has been locked. You cannot chat here.";
-        }
+        
         let canchat = channel.permissionsFor(everyone).serialize();
-        if (!canchat.SEND_MESSAGES) {
+        console.log(canchat.SEND_MESSAGES)
+        if (canchat.SEND_MESSAGES == false) {
           yes = false;
           cont = false;
           return message.reply("They already can't chat here.");
@@ -73,13 +88,13 @@ module.exports = {
                 return message.reply("Something went wrong! `" + error + "`");
               })
               .then(() => {
-                message.reply(
-                  "Successfully locked the channel <#" + channel.id + ">"
-                );
+                
                 const embed = new Discord.MessageEmbed()
-                  .setTitle("This channel has been locked.")
-                  .setColor("RANDOM")
-                  .setDescription(args[1]);
+                  .setTitle("This channel has been locked by a staff member.")
+                  .setColor("FF0000")
+                  .setDescription(`This channel has been locked. You cannot chat here. ${args[1]}`)
+                    .setFooter(`Locked by ${message.author.tag}`)
+                  .setTimestamp()
                 channel.send(embed);
                 message.delete()
               });

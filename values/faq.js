@@ -1,32 +1,12 @@
 const faqQuestion = [
-  'How does Moderator and Administrator role promotion work?',
-"Will members be promoted to a Server Manager if they Boost the server?",
-"How does the Aiden's House Moderation work?",
-"Are Ban Appeals always accepted?",
-"How do I quickly report another member?",
-"What do I do if another member falsely reports me to Server Staff?",
-"How likely is it for a member to win giveaways?",
-"Why was I warned or punished for something that doesn't even appear to be addressed in the rules?",
-"Will members who create fan art be rewarded?",
-"How do I Partner my server with Aiden's House?",
-"Who can join Game Nights?",
-"Why can't I chat in the Advertisement Channel?",
-"Does this server only prohibit the English language?"
+ "Why can't I chat in the Advertisement Channel?",
+ "How can I Partner with Aiden's House?",
+ "What are server trophies?"
 ]
 const faqAnswer = [
-  "After the person who wishes to become a Moderator files their application, it gets reviewed shortly after. However, depending on their answers and accuracy, they're promoted to <@&752989243646935091>, or <@&754465847610835000>.                                                                                                                            Those who become Trainees are promoted to <@&752989064977973329> after showing they can be trusted. If all goes well, they're then promoted to <@&754772421554208838>, and then, in rare cases, they become one of my guards.                                                                                                                                      If you'd like to become a Moderator, apply here: https://bit.ly/2RDw6TC",
-  "Unfortunately, no. Members who specialize our server with a Server Boost will be thanked; however not to the extent of being rewarded with Administrative/Moderative capabilities or permissions.",
-  "We have some basic guidelines on how to punish members. But, in most cases, members are restricted and then banned if they pursue negative acts.",
-  "Ban Appeals must fully explain the user's situation in order for Server Staff to identify their behavior's severity. However, when checking the Aiden's House Ban List, we must see a provided reason for the user's ban.                                                                                                                                        If no reason has been provided, the user is very unlikely to be unbanned.",
-  "To report another user for misconduct, you can ping the <@&769204484801953833> role to notify Moderators and Server Staff Members, and you can however type !aiden in chat for faster assistance.",
-  "Whenever we receive concerning reports, we're obligated to ask for procise evidence, so that we know we're not falsely punishing anyone.                                                                     However, false reporting is a violation of our guidelines. If you are a victim or witness of this behavior, let us know! Members involved in such inclusive acts will be punished to the greatest extent possible.",
-  "Giveaway winners are chosen randomly - members who are online at the time of a giveaway are at higher chance of receiving attention. Once a member is chosen, they're put through Member Logs, just so we can specify that they don't have any negative history with the server.                                                                                                                                                                                                    If they're all clear, they'll receive a DM with their prize.",
-  "The Terms & Guidelines covered in the Rules Channel are only a shorthand version of our rules. However, if you've been falsely punished, be sure to let a Staff Member know as soon as possible.                                                                                                                                                             More of our Server Guidelines are addressed here: https://bit.ly/AHServerRules",
-  "Those who specialize our server with some creative and welcoming fan art will be appreciated and noticed to the greatest extent. However, at the same time, they will not be given any additional permissions or roles, besides the <@&763440901204213761> role.",
-  "To send in your Server Partnerships in this server, you must have the proper consent to do so. Once you've received consent, you'll be given a Server Partner role, and you'll however be able to send in your Partnership in the Partnership Channel.                                                                                                                                                                                                                   However, by proceeding with a Partnership with our server, you understand the following:                      :white_small_square: You must not leave our server after sending your Partnership message                 :white_small_square: You must not resend your Partnership message after it's sent                     :white_small_square: After your Partner is sent, you must remember to continue to abide by our Terms and Guidelines and Privacy Rules",
-  "Game Nights are open for anyone to participate in. However, if a member is consistent with Game Night participation, they can be given additional Game Night roles and participation capabilities.",
-  "Here at Aiden's House, we order a bot command method in order to allow members to advertise. This will prevent hit-and-run advertising, which is addressed as a violation in our guidelines.                                                                                                                                                             Before you're able to advertise, you're required to give yourself the <@&761260746516070400> role by typing !advertiser in chat.                                                                                                                                                                                                                        For more information, click here: https://discord.com/channels/752978800756916444/763077525231370281/769672631511154711",
-  "Here at Aiden's House, it's definitely safe to say that we're a primarily English-speaking server. With this being said, we don't encourage the speaking of other languages when attempting to communicate with others.                                                                                                                                        If a member who doesn't understand any concept of English joins the server, we're normally obligated to exit them from the server to prevent any confusion."
+  "Before you're able to advertise, you're required to have the <@&761260746516070400> role. \n To claim this role, simply type !advertiser in chat. After doing so, you'll be able to chat and send messages in the Advertisement Channel.",
+  "To Partner with our server, contact any Staff Member or just create a Support Ticket on our site's Support Center. After you've received a response, ensure that your server has at least 30 members or more and does not contain any NSFW promotions.\n \n :link: https://bit.ly/32EN4XL",
+  "Trophies are given to members for certain accomplishments. As most aren't as rare and hard to get, we do have a few that can be challenging to claim. However, for now, these trophies won't hold any additional currency—you won't receive any special prize for winning them. We're looking to change that in the future."
 ]
 
 module.exports = [faqQuestion, faqAnswer]

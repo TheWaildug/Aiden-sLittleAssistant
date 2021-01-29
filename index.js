@@ -1,55 +1,24 @@
-const Discord = require('discord.js')
-const Prefix = "!";
-const moment = require("moment");
-const ms = require('ms')
+const Discord = require("discord.js")
 const client = new Discord.Client();
-const data = require("@replit/database");
-const math = require('mathjs')
-const database = new data();
+const prefix = "!"
 const fs = require("fs");
-var dateFormat = require("dateformat");
-const { setTimeout } = require("timers");
-const keepAlive = require('./server');
-const fetch = require('node-fetch')
-const ytdl = require('ytdl-core')
+const fetch = require("node-fetch")
+const ms = require("ms")
+const FF000 = "FF0000"
 const redditFetch = require("reddit-fetch")
-var servers = {}
-const FF000 = "#FF0000"
-const { ReactionRoleManager } = require
-("discord.js-collector");
-var on = false  
-const quotes = require('./values/quotes')
-const facts = require('./values/facts')
+const pings = require("./values/aidenping")
 const aidens = require('./values/aiden')
-
-const reactionRoleManager = new ReactionRoleManager(client, {
-    storage: true, // Enable reaction role store in a Json file
-    path: __dirname + '/roles.json', // Where will save the roles if store is enabled
-    mongoDbLink: process.env.MONGO 
-});
-reactionRoleManager.on('ready', () => {
-    console.log('Reaction Role Manager is ready!');
-});
-
-
-reactionRoleManager.on('reactionRoleAdd', (member, role) => {
-    console.log(member.displayName + ' got the role ' + role.name)
-});
-
-reactionRoleManager.on('reactionRoleRemove', (member, role) => {
-    console.log(member.displayName + ' lost the role ' + role.name)
-});
-
-reactionRoleManager.on('allReactionsRemove', (message) => {
-    console.log(`All reactions from message ${message.id} was removed, all roles were taken and reactions roles deleted.`)
-});
-
-reactionRoleManager.on('missingRequirements', (type, member, reactionRole) => {
-    console.log(`Member '${member.id}' will not get role '${reactionRole.role}', because they don't have the requirement ${type}`);
-});
-
-
+const quotes = require('./values/quotes')
+const facts = require('./values/facts') 
+const roles = require('./values/roles')
+const asked = require("./values/asked")
+const slurs = require('./values/slurs')
+const threats = require('./values/threats')
+const swears = require('./values/swears')
 const [faqQuestion, faqAnswer] = require('./values/faq')
+const Database = require("@replit/database")
+const db = new Database()
+let on = false
 client.Commands = new Discord.Collection();
 
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
@@ -58,74 +27,15 @@ for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
 	client.Commands.set(command.name, command);
 }
-
-function randomIntFromIntervalmax(max) { // min and max included 
-  return Math.floor(Math.random() * (max - 1 + 1) + 1);
-}
-function pingthingy() { // min and max included 
-  return Math.floor(Math.random() * (2 - 1 + 1) + 1);
-}
-function getRole(guild,role){
-  const rol = guild.roles.cache.find(r => r.id == role);
-  console.log(rol.id)
-  return rol
-}
-async function getmemboo(guild,id){
-  const member = await guild.members.fetch(id).catch(console.log)
-  if(member){
-    return member
-  }
-}
-async function IsMuted(user,guild){
-  const muted = await getData(`Guild-${guild}-IsMuted-${user}`)
-  console.log(muted)
-  if(muted != null){
-    return true
-  } else if(!muted == null){
-    return false
-  }
-}
-
-function play(connection,message){
-  var server = servers[message.guild.id]
-  console.log(server.queue[0])
-  server.dispatcher = connection.play(ytdl(server.queue[0],{filter: "audioonly"}))
-  server.queue.shift()
-  server.dispatcher.on('end', function(){
-    if(server.queue[0]){
-    play(connection,message)
-    }else{
-      connection.disconnect()
-    }
-  })
-}
-/// reeee aiden
-async function getmember(id) {
-  let member = await client.users.fetch(id);
-  return member;
-}
-async function getData(key){
-  
-  
-  const data = await database.get(key);
-
-  return data
-}
-
-
 client.on("ready", async () => {
-
+const status = await db.get("Status")
   console.log("I am ready Aiden!"); 
-    client.user.setActivity("aiden smells", {
+    client.user.setActivity(status, {
   type: "STREAMING",
   url: "https://www.twitch.tv/wainked"
 });
 
 })
-client.on("disconnected", () => {
-    client.user.setStatus("offline");
-
-});
 function iscool(id){
   if(id === '366369929693233163'){
     return true
@@ -141,6 +51,20 @@ function iscool(id){
   }
   return false
 }
+
+async function GetMember(guild, id) {
+  let member = await guild.members.fetch(id);
+  return member;
+}
+function moderatenumber(){
+   min = Math.ceil("1");
+  max = Math.floor("9");
+  return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+
+}
+function pingthingy() { // min and max included 
+  return Math.floor(Math.random() * (2 - 1 + 1) + 1);
+}
 function invitechannel(id){
   if(id === "754401455724560527"){
     return true
@@ -149,40 +73,6 @@ function invitechannel(id){
     return true
   }
 }
-
-async function run(key,message) {
-  console.log('run function')
-  const data = await getData(key);
-  console.log('' + data); // will print your data
-  if(message){
-  return message.reply("Here's the data I found from the key " + key + ": `" +   data + '`')
-  }
-}
-
-async function setData(key,data){
-  await database.set(key,data);
-  console.log('i think it worked')
-  return
-}
-async function removeData(key){
-  console.log('remove data')
-  database.delete(key).then(() => {
-    console.log(`Successfully removed the key ${key}`)
-    return  })
-}
-
-async function GetMember(guild, id) {
-  let member = await guild.members.fetch(id);
-  return member;
-}
-
-const slurs = require('./values/slurs')
-
-const swears = require('./values/swears')
-const asked = require("./values/asked")
-
-const roles = require('./values/roles')
-const threats = require('./values/threats')
 function isbypasses(user) {
  for (var i = 0; i < roles.length; i++) {
   
@@ -192,191 +82,135 @@ function isbypasses(user) {
  }
  return false
 }
-
-client.on("message", message => {
- const args = message.content.split(" ");
-
- if (message.content.toLowerCase().includes("aiden")) {
-    if (!message.author.bot) {
-      if(message.content.toLowerCase().includes('!aiden')){
-        return;
-      }
-      if(message.channel.id == "791083233751597056"){
-        return;
-      }
-      console.log('someone said aiden')
-      console.log(message.channel.name)
-      message.channel.send(
-        "Did someone say **Aiden?** I'm pretty sure that's what I heard!"
-      );
-    }
-  }
-  if(message.guild != null){for (var i = 0; i < aidens.length; i++){
- if (message.content.toLowerCase().includes(aidens[i])) {
-    if (!message.author.bot) {
-     
-      console.log('someone said ' + aidens[i])
-      console.log(message.content)
-      return message.channel.send(
-        "It's pronounced **Aiden** but okay."
-      );
-    }
-  }
-  }}
-
-
- if(message.guild != null){for (var i = 0; i < asked.length; i++) {
-    if (
-      message.content.toLowerCase().includes(asked[i]) &&
-      !message.author.bot
-    ) {
-      console.log("nobody asked bro");
-      if (message.member.bot) {
-        return console.log("this a bot");
-      }
-      message.channel.send(`<@${message.member.id}>`, {
-        files: [
-          "https://cdn.discordapp.com/attachments/754399210438131742/779162777767903242/Demoman_does_not_care_if_you_didnt_ask.mp4"
-        ]
-      });
-      break;
-    }
-  }
-  for (var i = 0; i < args.length; i++) {
-
-       if(args[i].toLowerCase() == 'ok' || args[i].toLowerCase() == "okay" || args[i].toLowerCase() == "k"){
-        
-  {message.react('🆗')}
-}
-if(args[i].toLowerCase() == "bro" || args[i].toLowerCase() == "bruh"){
-  if(!message.author.bot){
-    const emoji = message.guild.emojis.cache.find(e => e.id == '786244760338694197')
-    if(emoji){
-      message.react(emoji)
-    }
-  }
-}
-    
-}
+function canpingaiden(user) {
+ for (var i = 0; i < pings.length; i++) {
   
-  for (var w = 0; w < slurs.length; w++) {
-    
-   if (message.content.toLowerCase().includes(slurs[w]))  {
-  
-      if (isbypasses(message.member)) {
-        return console.log("this dude is important");
-      }
-      if (message.member.bot) {
-        return console.log("boobies bot");
-      }
-      console.log("this man said a naughty slur!");
-      console.log(message.member.user.tag);
-      console.log(slurs[w]);
-      console.log(message.content);
-      const embed = new Discord.MessageEmbed()
-        .setTitle(`You're not allowed to say that!`)
-        .setColor(FF000)
-        .setDescription(
-          `Slurs are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
-        );
-      message.channel.send(`<@${message.member.id}>`,embed);
+   if(user.roles.cache.find(r => r.id == pings[i])){
+     return true
+   }
+ }
+ return false
+}
+async function IsMuted(user,guild){
+  const muted = await db.get(`Guild-${guild}-IsMuted-${user}`)
+  console.log(muted)
+  if(muted != null){
+    return true
+  } else if(!muted == null){
+    return false
+  }
+}
+
+setInterval(async function(){
  
-      message.delete();
-      break;
-    }
-  }
-  
-  for (let w = 0; w < swears.length; w++) {
-    let continu = true;
-    if (message.content.toLowerCase().includes(swears[w]))   {
-      
-      if (message.member.bot) {
-        console.log("bot");
-        return (continu = false);
-      }
-      if (isbypasses(message.member)) {
-        console.log("this dude is important lol");
-        return (continu = false);
-      }
-      if (continu === true) {
+   const list = await db.getAll()
+  const key = Object.keys(list)
+  key.forEach(async function(item, index, array) {
     
-        console.log("this man said a naughty word!");
-        console.log(swears[w]);
-        console.log(message.content);
-        console.log(message.member.user.tag);
-        const embed = new Discord.MessageEmbed()
-          .setTitle(`You're not allowed to say that!`)
-          .setColor(FF000)
-          .setDescription(
-            `NSFW or sexual references are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
-          );
-        message.channel.send(`<@${message.member.id}>`,embed);
-      
-        message.delete();
-        break;
-      }
-    }
-  }}
-    for (var w = 0; i < threats.length; i++) {
-    if (message.content.toLowerCase().includes(threats[w])){ 
-  
-      if (isbypasses(message.member)) {
-        return console.log("this dude is important");
-      }
-      if (message.member.bot) {
-        return console.log("boobies bot");
-      }
-      console.log("this man said a naughty threat!");
-      console.log(message.member.user.tag);
-      console.log(threats[w]);
-      console.log(message.content);
-      const embed = new Discord.MessageEmbed()
-        .setTitle(`You're not allowed to say that!`)
-        .setColor(FF000)
-        .setDescription(
-          `Death threats are not allowed here! Your message has just been sent to Server Staff and will be acted upon shortly.`
-        );
-      message.channel.send(`<@${message.member.id}>`,embed);
- 
-      message.delete();
-      break;
-    }
+    if(item.toString().includes(`Guild-752978800756916444-MuteMS-`)){
+      const value = Object.values(list)
+      value.forEach(async function(iam,ide,arra){
+        if(ide == index){
+          if(Date.now() >= iam){
+            const userid = item.toString().replace(`Guild-752978800756916444-MuteMS-`,"")
+            console.log("user should be unmuted")
+            const guild = await client.guilds.fetch("752978800756916444")
+            if(guild){
+              db.delete(`Guild-752978800756916444-IsMuted-${userid}`)
+              db.delete(`Guild-752978800756916444-MuteMS-${userid}`)
+              let notsplit = await db.get(`Guild-752978800756916444-MuteMessage-${userid}`)
+              
+              console.log(notsplit)
+                let message
+                message = notsplit.split("/")
+                console.log(message[6])
+
+                const channel = await guild.channels.cache.find(c => c.id == message[5])
+                if(channel){
+                  channel.send(`Auto Unmuted <@${userid}>. Message link: ${notsplit}`)
+                }
+                db.delete(`Guild-752978800756916444-MuteMessage-${userid}`)
+                const user = await guild.members.cache.find(r => r.id == userid)
+                if(user){
+                  const role = await guild.roles.cache.find( r => r.id == "753027833936478278")
+                  if(role){
+                    user.roles.remove(role,`Auto Unmute`)
+                  }
+                }
+            }
+          }
+        }
+      })
+  }})
+},10000)
+
+
+//imagine editing
+client.on("messageUpdate", (oldMessage, message) => {
+  if(oldMessage.guild == null){
+  return;
+}
+const newmsg = message
+const oldmsg = oldMessage
+ if(newmsg.guild == null || oldmsg.guild == null || oldmsg.author.bot || newmsg.author.bot){
+    return;
   }
-  let invites = ['https://discord.gg/']
+  if(newmsg.deleted == true){
+    return;
+  }
+  if(oldmsg.content && newmsg.content && oldmsg.content != newmsg.content){
+    console.log(`${oldmsg.author.tag} just edited a message in ${oldmsg.channel.name}. Old Mesage: ${oldmsg.content}. New Message: ${newmsg.content}.`)
+    const embed = new Discord.MessageEmbed()
+    .setTitle(`Chat Logs`)
+    .setDescription(`New Message Update.`)
+    .setColor("FF0000")
+    .addField(`Author:`,`<@${oldmsg.author.id}>`)
+    .addField(`Channel:`,`<#${oldmsg.channel.id}>`)
+    .addField(`Old Content:`,`${oldmsg.content}`)
+    .addField(`New Content:`,`${newmsg.content}`)
+    .addField(`Message URL:`,`${newmsg.url}`)
+   var peerams = {
+         "username": "CHAT LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
 
+  "embeds": [embed
+]
 
-if(args.find(w => w.indexOf(invites[0]) >= 0)) {
-  if(!invitechannel(message.channel.id)){
-  if(!message.member.hasPermission("MANAGE_MESSAGES")){
-  const embed = new Discord.MessageEmbed()
-        .setTitle(`You're not allowed to do that!`)
-        .setColor(FF000)
-        .setDescription(
-          `Discord invites are not allowed here! Please use the correct channel.`
-        );
-        message.channel.send("<@" + message.member.id + ">",embed)
-return  message.delete();
-
-
-}
-}
-
-
-}
+    }
+     fetch(process.env.DELETEHOOK, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
 })
+  }
+  
+});
+
+///imagine deleting
 client.on("messageDelete", async message => {
 if(message.guild == null){
   return;
 }
-
+if(message.author.bot){
+  return;
+}
   const entry = await message.guild.fetchAuditLogs({type: 'MESSAGE_DELETE'}).then(audit => audit.entries.first())
-  var user = ""
-    if (entry.extra.channel.id === message.channel.id
+  try{
+    let user = ""
+   
+    if(entry){
+      
+       if (entry.extra.channel.id === message.channel.id
       && (entry.target.id === message.author.id)
       && (entry.createdTimestamp > (Date.now() - 5000))
       && (entry.extra.count >= 1)) {
     user = entry.executor
-  } else { 
+  } else{
+    user = message.author
+  }
+    }else { 
     user = message.author
   }
  console.log(`A message deleted in the channel ${message.channel.name}, with the content ${message.content}, created by ${message.author.tag}, was deleted by ${user.tag}.`)
@@ -385,7 +219,7 @@ if(message.guild == null){
             .setTitle('Chat Logs')
             .setDescription("New Message Delete!")
             .addFields(
-                { name: 'Sender:', value: `<@${message.member.id}>` },
+                { name: 'Sender:', value: `<@${message.author.id}>` },
                 { name: "Channel:", value: `<#${message.channel.id}>` },
                 {name: "Message:", value: `${message.content}`},
                 {name: "Deleter:", value: `<@${user.id}>`}
@@ -408,402 +242,25 @@ if(message.guild == null){
     },
     body: JSON.stringify(peerams)
 })
-})
-client.on("messageUpdate", (oldMessage, message) => {
-  if(oldMessage.guild == null){
-  return;
-}
-    if(oldMessage.content == message.content){
-      return;
-    }
-
-    if(message.author.bot){
-      return;
-    }
-    if(oldMessage.content && message.content){
-      console.log(`Message updated by ${message.member.user.tag} in the channel ${oldMessage.channel.name}. Old Message ${oldMessage.content}. New Message ${message.content}.`)
-  for (var i = 0; i < slurs.length; i++) {
-      if (message.content.toLowerCase().includes(slurs[i])) {
-   
-        if (isbypasses(message.member)) {
-          return console.log("this dude is important");
-        }
-        if (message.member.bot) {
-          return console.log("boobies bot");
-        }
-             console.log(message.content)
-        console.log("this man said a naughty slur!");
-        console.log(message.member.user.tag);
-        console.log(slurs[i]);
-        console.log(message.content);
-        const embed = new Discord.MessageEmbed()
-          .setTitle(`You're not allowed to say that!`)
-          .setColor(FF000)
-          .setDescription(
-            `Slurs are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
-          );
-        message.channel.send(`<@${message.member.id}>`,embed);
-        
-        message.delete();
-        break;
-      }
-    }
+  }catch(error){
+    console.log(`Deleted Message Error: ${error.message}`)
   }
-   for (var i = 0; i < threats.length; i++) {
-    if (message.content.toLowerCase().includes(threats[i])) {
-  
-      if (isbypasses(message.member)) {
-        return console.log("this dude is important");
-      }
-      if (message.member.bot) {
-        return console.log("boobies bot");
-      }
-      console.log("this man said a naughty threat!");
-      console.log(message.member.user.tag);
-      console.log(threats[i]);
-      console.log(message.content);
-      const embed = new Discord.MessageEmbed()
-        .setTitle(`You're not allowed to say that!`)
-        .setColor(FF000)
-        .setDescription(
-          `Death threats are not allowed here! Your message has just been sent to Server Staff and will be acted upon shortly.`
-        );
-      message.channel.send(`<@${message.member.id}>`,embed);
  
-      message.delete();
-      break;
-    }
-  }if(!oldMessage.content && message.content){
-    console.log(`Message Update by ${message.member.user.tag}. Old Message could not be found or is an image. New Message ${message.content}`)
-     for (var i = 0; i < slurs.length; i++) {
-      if (message.content.toLowerCase().includes(slurs[i])) {
-       
-        if (isbypasses(message.member)) {
-          return console.log("this dude is important");
-        }
-        if (message.member.bot) {
-          return console.log("boobies bot");
-        }
-            console.log(message.content)
-        console.log("this man said a naughty slur!");
-        console.log(message.member.user.tag);
-        console.log(slurs[i]);
-        console.log(message.content);
-        const embed = new Discord.MessageEmbed()
-          .setTitle(`You're not allowed to say that!`)
-          .setColor(FF000)
-          .setDescription(
-            `Slurs are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
-          );
-        message.channel.send(`<@${message.member.id}>`,embed);
-        
-        message.delete();
-        break;
-      }
-    }
-  }
-});
-
-function calcTime(offset) {
-  var d = new Date();
-  var localTime = d.getTime();
-  var localOffset = d.getTimezoneOffset() * 60000;
-
-  // obtain UTC time in msec
-  var utc = localTime + localOffset;
-  // create new Date object for different city
-  // using supplied offset
-  var nd = new Date(utc + 3600000 * offset);
-  //nd = 3600000 + nd;
-  utc = new Date(utc);
-  // return time as a string
-  return (
-    "The current date for the offset " +
-    offset +
-    " is `" +
-    nd.toLocaleString() +
-    ".` The UTC date is `" +
-    utc.toLocaleString() +
-    "`."
-  );
-}
-
-async function ban(message, args) {
-  if (!args[0]) {
-    return message.channel.send("Uh oh. That didn't work! Try again.");
-  }
-  var memberto, mentionMember;
-
-  var cont = true;
-  if (message.mentions.members.first()) {
-    mentionMember = memberto = memberto = message.mentions.members.first();
-  } else if (!message.mentions.members.first()) {
-    console.log(args[0]);
-    mentionMember = memberto = await GetMember(
-      message.channel.guild,
-      args[0]
-    ).catch(error => {
-      console.warn("Error " + error);
-      cont = false;
-      return message.reply("Something went wrong! `" + error + "`");
-    });
-  }
-  console.log(mentionMember);
-  if (!mentionMember) {
-    return message.reply("Please specify a user or their id.");
-  }
-  if (cont != true) {
-    return;
-  }
-
-  if (!memberto) {
-    return message.reply("Something went wrong.");
-  }
-  if (memberto.id === message.member.id) {
-    return message.reply("lol you can't ban yourself stupid");
-  }
-  if (memberto.bot) {
-    return message.reply("lol, imagine trying to ban a bot");
-  }
-  if (
-    mentionMember.roles.highest.position >=
-    message.member.roles.highest.position
-  ) {
-    console.log("higher");
-    return message.reply("This user has an equal or higher role.");
-  }
-  if (isbypasses(memberto) === true) {
-    return message.reply(
-      "I don't think this guy can be banned. They're like, Superman, or something."
-    );
-  }
-
-  if (!memberto.bannable) {
-    message.reply(
-      "uh oh! I do not have the proper permissions to ban this user."
-    );
-    return;
-  }
-  var i;
-  var e = "";
-  for (i = 0; i < args.length; i++) {
-    if (i >= "1") {
-      e = e + args[i] + " ";
-    }
-  }
-  args[1] = e;
-  console.log(args[1]);
-  if (!args[1]) {
-    message.reply("please contain a reason!");
-    return;
-  }
-  mentionMember
-    .send(
-      `You have been banned from ${message.channel.guild}. Reason: ${
-      args[1]
-      }. If you'd like to appeal this ban, visit our Ban Appeals website page here. https://bit.ly/36dPGg5`
-    )
-    .catch(() =>
-      console.log(`Uh oh! I can't send a DM to ${memberto.user.tag}.`)
-    );
-  memberto
-    .ban({
-      reason: `Ban by ${message.member.user.tag} | Reason:` + args[1]
-    })
-    .catch(error => {
-      console.warn("Error " + error);
-      cont = false;
-      return message.reply("Something went wrong! `" + error + "`");
-    })
-    .then(() =>{
-      console.log(
-        `We've just banned ${mentionMember.user.tag} with the reason ${
-        args[1]
-        } by ${message.member.user.tag}`
-        
-      ),
-     message.delete()
-     
-  return message.channel.send(
-    `We've just banned ${mentionMember} with the reason` + "`" + args[1] + "`"
-  ).then(msg =>{
-    msg.delete(10000)
-  })
-  });
-
-  
-
-}
-
-async function kick(message, args) {
-  if (!args[0]) return message.channel.send("Uh oh. That didn't work!");
-  var memberto, mentionMember;
-
-  var cont = true;
-  if (message.mentions.members.first()) {
-    mentionMember = memberto = memberto = message.mentions.members.first();
-  } else if (!message.mentions.members.first()) {
-    console.log(args[0]);
-    mentionMember = memberto = await GetMember(
-      message.channel.guild,
-      args[0]
-    ).catch(error => {
-      console.warn("Error " + error);
-      cont = false;
-      return message.reply("Something went wrong! `" + error + "`");
-    });
-  }
-  console.log(mentionMember);
-  if (!mentionMember) {
-    return message.reply("Please specify a user or their id.");
-  }
-  if (cont != true) {
-    return;
-  }
-  if (memberto.id === message.member.id) {
-    return message.reply("lol you can't kick yourself stupid");
-  }
-  if (
-    mentionMember.roles.highest.position >=
-    message.member.roles.highest.position
-  ) {
-    console.log("higher");
-    return message.reply("This user has an equal or higher role.");
-  }
-  if (memberto.bot) {
-    return message.reply("lol, imagine trying to kick a bot");
-  }
-  if (isbypasses(memberto) === true) {
-    return message.reply(
-      "I don't think his guy just can be kicked. They're like, Superman, or something."
-    );
-  }
-  var i;
-  var e = "";
-  for (i = 0; i < args.length; i++) {
-    if (i >= "1") {
-      e = e + args[i] + " ";
-    }
-  }
-  args[1] = e;
-  console.log(args[1]);
-  if (!args[1]) {
-    message.reply("please contain a reason!");
-    return;
-  }
-  if (!memberto.kickable) {
-    message.reply(
-      "Uh oh! I do not have the proper permissions to kick this user."
-    );
-    return;
-  }
-    mentionMember
-    .send(
-      `You have been kicked from ${message.channel.guild}. Reason:` + "`"  + args[1] + "`"
-    )
-    .catch(() => console.warn(`I cannot send a DM to ${memberto.user.tag}.`));
-    
-  memberto
-    .kick(`Kick by ${message.member.user.tag} for the reason ` + args[1])
-    .catch(error => {
-      console.warn("Error " + error);
-      cont = false;
-      return message.reply("Something went wrong! `" + error + "`");
-    })
-    .then(() =>
-      console.log(
-        `Kicked ${mentionMember.user.tag} by ${
-        message.member.user.tag
-        } with the reason ${args[1]}`
-      )
-    );
-
-  message.channel
-    .send(
-      `Alrighty! We've just sucessfully kicked ${mentionMember} with the reason` + "`" + 
-      args[1] + "`"
-    ).then(msg =>{
-    msg.delete(10000)
-  })
-    message.delete()
-
-    .catch(console.error);
-}
-
-client.on("message", async message => {
+})
+///mentions
+client.on("message",async message => {
    if(message.guild == null){
-    if(message.author.bot){
-      return;
-    }
-    if(message.author.id == "772834188189630465"){
-      return;
-    }
-    getmember(message.author.id).then(member =>{
-   
-    
-      if(message.attachments.size > 0){
-        console.log('attach')
-       
-      message.attachments.forEach(att => {
-        console.log(att.url)
-      var params = {
-    "username": "DM LOGS", // the name of the webhook
-    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
-    "content": `New attachment from <@${member.id}>`,
-  "embeds": [{
-    "image": {
-      "url": att.url
-    }
-  }]
-}
-      
-     fetch(process.env.DMHOOK, {
-    method: "POST",
-    headers: {
-        'Content-type': 'application/json'
-    },
-    body: JSON.stringify(params)
-})
-      })
-      }
-      if(message.content){
-        console.log('content')
-         console.log('Author: ' + member.username + '. Message: ' + message.content)
-     const exampleEmbed = new Discord.MessageEmbed()
-      .setColor("#E416FF")
-      .setTitle("DM LOGS")
-      .setDescription("New DM to <@772834188189630465>!")
-      .addFields(
-        { name: "User", value: `<@${member.id}>` },
-        { name: "Message: ", value: `${message.content}` }
-      )
-      .setTimestamp();
-      
-var params = {
-    username: "DM LOGS", // the name of the webhook
-    avatar_url: "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
-    embeds: [exampleEmbed]
-}
-      
-     fetch(process.env.DMHOOK, {
-    method: "POST",
-    headers: {
-        'Content-type': 'application/json'
-    },
-    body: JSON.stringify(params)
-})
-    }
-  })
-}
-
-
-
-  if (message.mentions.members) {
+    return;
+  }
+ if (message.mentions.members) {
     if (message.mentions.members.first()) {
       var conti = true;
       console.log("mention thingy");
       console.log(message.channel.name)
-      const user = message.mentions.members.first()
+      message.mentions.members.forEach(user => {
+        if(!user){
+        return;
+      }
       if (on === true) {
         return;
       }
@@ -817,6 +274,10 @@ var params = {
       }
 
       if (isbypasses(message.member) === true) {
+        console.log("this idiot has a coolio role");
+        conti = false;
+      }
+       if (canpingaiden(message.member) === true) {
         console.log("this idiot has a coolio role");
         conti = false;
       }
@@ -840,7 +301,7 @@ var params = {
         console.log("this stupid idiot got pinged");
         const embed = new Discord.MessageEmbed()
           .setTitle("You're not allowed to do that!")
-          .setColor(FF000)
+          .setColor("FF0000")
           .setDescription(
             `You're not allowed to ping Aiden in chat. Continuing will result in a mute.`
           );
@@ -852,59 +313,545 @@ var params = {
         return (on = false);
       }
       if(user){
- getData(`Guild-${message.channel.guild.id}-IsAfk-${user.id}`).then(afk => {
+        
+ db.get(`Guild-${message.channel.guild.id}-IsAfk-${user.id}`).then(async afk => {
     if(afk != null){
-        message.reply('`' + user.user.tag + '` is AFK with the reason `' + afk + '`.')
+     let afkms = await db.get(`Guild-${message.guild.id}-AfkMS-${user.id}`)
+        afkms = Date.now() - afkms
+        message.reply('`' + user.user.tag + '` has been AFK with the reason `' + afk + '`, '  + `for ${ms(afkms,  { long: true })}.`)
       }
       })
       }
      
       
+      })
+      
     }
   }
 
 
- if(!message.content.startsWith(Prefix)){
+})
+client.on("guildMemberUpdate",async (oldmember,newmember) => {
+   const fetchedLogs = await oldmember.guild.fetchAuditLogs({
+		limit: 1,
+		type: 25,
+	});
+  const roleLog = fetchedLogs.entries.first();
+  if(oldmember.roles.cache.size > newmember.roles.cache.size){
+     if(!roleLog){return console.log(`${oldmember.user.tag} had a role removed but we don't know anything else.`)}
+  let { executor, target, changes, reason } = roleLog;
+     let removedRole = ''
+  oldmember.roles.cache.forEach(function (value) {
+    if (newmember.roles.cache.find(id => id == value.id) == null) {
+      removedRole = value.name
+    }
+  })
+  if(reason == null){
+    reason = "None."
+  }
+  console.log(`${oldmember.user.tag} had ${removedRole} removed by ${executor.tag}.`)
+  const embed = new Discord.MessageEmbed()
+    .setTitle(`GuildMember Update`)
+    .setDescription(`Role Remove`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${newmember.id}>`)
+    .addField(`Role Removed`,removedRole)
+    .addField(`Reason`,reason)
+    .addField(`Changer`,`<@${executor.id}>`)
+    var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
+
+  "embeds": [embed
+]
+
+    }
+     fetch(process.env.USERHOOK, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+  } 
+   
+ 
+  
+})
+///username change
+client.on("guildMemberUpdate", async (oldmember, newmember) => {
+  if(oldmember.displayName != newmember.displayName){
+    const fetchedLogs = await oldmember.guild.fetchAuditLogs({
+		limit: 1,
+		type: 24,
+	});
+  const nicklog = fetchedLogs.entries.first();
+  let { executor, target, reason } = nicklog;
+ if(reason == null){
+   reason = "None."
+ }
+ if(reason == "AFK"){
    return;
  }
-
-  const args = message.content.slice(Prefix.length).split(" ");
-
-
-     
-  const command = args.shift().toLowerCase();
-  
-  if (command === "aiden") {
+ if(reason == "Return from AFK"){
+   return;
+ }
     
+  if(!nicklog){
+   console.log(`${oldmember.user.tag}'s username was changed from ${oldmember.displayName} to ${newmember.displayName} by an unknown user`)
     const embed = new Discord.MessageEmbed()
-      .setTitle("Sit tight! Moderators are on the way...")
-      .setColor(FF000)
-      .setDescription(
-        "If you need any help, contact Staff, or visit the **Aiden's House** website! We're always here to help you out. https://bit.ly/AidensHouse"
-      );
+    .setTitle(`GuildMember Update`)
+    .setDescription(`Nickname Change`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${newmember.id}>`)
+    .addField(`Old Nickname`,oldmember.displayName)
+    .addField(`New Nickname`,newmember.displayName)
+    var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
 
-    return message.channel.send("<@" + message.member.id + ">",embed);
-    
+  "embeds": [embed
+]
+
+    }
+     fetch(process.env.USERHOOK, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+  }
+  console.log(`${oldmember.user.tag}'s username was changed from ${oldmember.displayName} to ${newmember.displayName} by ${executor.tag}`)
+    const embed = new Discord.MessageEmbed()
+    .setTitle(`GuildMember Update`)
+    .setDescription(`Nickname Change`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${newmember.id}>`)
+    .addField(`Old Nickname`,oldmember.displayName)
+    .addField(`New Nickname`,newmember.displayName)
+    .addField("Reason",reason)
+    .addField(`Changer`,`<@${executor.id}>`)
+     var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
+
+  "embeds": [embed
+]
+
+    }
+     fetch(process.env.USERHOOK, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+  }
+})
+//dad bot like thing
+client.on("message",async message => {
+   if(message.guild == null){
+    return;
   }
   
+const botuser = message.guild.members.cache.find(r => r.id == "772834188189630465")
+  const args = message.content.split(" ")
+  if((args[0].toLowerCase() == "i'm" || args[0].toLowerCase() == 'im') && (args[1])){
+      if(args.slice(1).join(' ').includes("@everyone") || args.slice(1).join(' ').includes("@here")){
+      return message.reply(`You can't make me ping everyone loser.`)
+    }
+                message.channel.send(`Hi, ${args.slice(1).join(' ')}, I'm ${botuser.displayName}!`);
+        }
+  
+}) 
+///more words cause bot not like workie
+client.on("message",async message => {
+  if(message.guild == null){
+    return;
+  }
+  const args = message.content.split(" ")
+ 
+   for (var w = 0; w < slurs.length; w++) {
+    if(message.content.toLowerCase().includes(slurs[w])){
+      if (isbypasses(message.member)) {
+        return console.log("this dude is important");
+      }
+      
+      console.log("this man said a naughty slur!");
+      console.log(message.member.user.tag);
+      console.log(slurs[w]);
+      console.log(message.content);
+      const embed = new Discord.MessageEmbed()
+        .setTitle(`You're not allowed to say that!`)
+        .setColor("FF0000")
+        .setDescription(
+          `Slurs are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
+        );
+      message.channel.send(`<@${message.member.id}>`,embed);
+ 
+      message.delete();
+      break;
+    }
+  }
+   for (let i = 0; i < args.length; i++) {
+
+if(args[i]){
+  if(args[i].toLowerCase() == "ok" || args[i].toLowerCase() == "k" || args[i].toLowerCase() == "okay"){
+  
+    message.react("🆗")
+    
+
+    
+  }
+    
+ 
+ for (let w = 0; w < swears.length; w++) {
+    let continu = true;
+    if (args[i].toLowerCase() == swears[w]){
+      
+      if (message.member.bot) {
+        console.log("bot");
+        return (continu = false);
+      }
+      if (isbypasses(message.member)) {
+        console.log("this dude is important lol");
+        return (continu = false);
+      }
+      if (continu === true) {
+    
+        console.log("this man said a naughty word!");
+        console.log(swears[w]);
+        console.log(message.content);
+        console.log(message.member.user.tag);
+        const embed = new Discord.MessageEmbed()
+          .setTitle(`You're not allowed to say that!`)
+          .setColor("FF0000")
+          .setDescription(
+            `NSFW or sexual references are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
+          );
+        message.channel.send(`<@${message.member.id}>`,embed);
+      
+        message.delete();
+        break;
+      }
+    }
+  }
+    
+}}
+})
+///Saying words
+client.on("message", async message => {
+  if(message.guild == null){
+    return;
+  }
+  const args = message.content.split(" ")
+  if(message.content.toLowerCase().includes("waildug")){
+    if(!message.author.bot){
+      console.log("boobug")
+      console.log(message.channel.name)
+      const boobbug = await message.guild.members.fetch("432345618028036097")
+      message.channel.send(`You mean that annoying person`).then(msg => {
+        msg.edit(`You mean that annoying person ${boobbug}?`)
+      })
+    }
+  }
+  if (message.content.toLowerCase().includes("aiden")) {
+    if (!message.author.bot) {
+      
+      if(message.content.toLowerCase().includes('!aiden')){
+        return;
+      }
+      if(message.channel.id == "791083233751597056"){
+        return;
+      }
+      console.log('someone said aiden')
+      console.log(message.channel.name)
+      message.channel.send(
+        "Did someone say **Aiden?** I'm pretty sure that's what I heard!"
+      );
+    }
+  }
+ 
+    if(message.content.toLowerCase().includes("ni||cecar||")){
+     
    
-  if (command === "site") {
-    const embed = new Discord.MessageEmbed()
-      .setTitle("Click below to visit the Aiden's House official website.")
-      .setColor(E416FF)
-      .setDescription(`https://bit.ly/AidensHouse`);
-    return message.channel.send("<@" + message.member.id + ">",embed);
-  } 
-else if (command === "membercount") {
+      if (isbypasses(message.member)) {
+        return console.log("this dude is important");
+      }
+      
+      console.log("this man said a naughty spoiler bait!");
+      console.log(message.member.user.tag);
+
+      console.log(message.content);
+      const embed = new Discord.MessageEmbed()
+        .setTitle(`You're not allowed to say that!`)
+        .setColor("FF0000")
+        .setDescription(
+          `You are not allowed to abuse spoilers! Your message has just been sent to Server Staff and will be acted upon shortly.`
+        );
+      message.channel.send(`<@${message.member.id}>`,embed);
+ 
+      message.delete();
+      
+  
+  
+  
+    }
+  let invites = ['https://discord.gg/',"discord.gg/"]
+
+
+  if(args.find(w => w.indexOf(invites[1 || 0]) >= 0)) {
+  if(!invitechannel(message.channel.id)){
+  if(!message.member.hasPermission("MANAGE_MESSAGES")){
+  const embed = new Discord.MessageEmbed()
+        .setTitle(`You're not allowed to do that!`)
+        .setColor("FF0000")
+        .setDescription(
+          `Discord invites are not allowed here! Please use the correct channel.`
+        );
+        message.channel.send("<@" + message.member.id + ">",embed)
+return  message.delete();
+
+
+}
+}
+
+
+}
+
+
+
+  if(message.guild != null){for (var i = 0; i < aidens.length; i++){
+    for(let w = 0; w < args.length; w++){
+      if (args[w].toLowerCase() == aidens[i]) {
+    if (!message.author.bot) {
+     
+      console.log('someone said ' + aidens[i])
+      console.log(message.content)
+      return message.channel.send(
+        "It's pronounced **Aiden** but okay."
+      );
+    }
+ }}}
+    }
+ 
+  if(message.guild != null){for (var i = 0; i < asked.length; i++) {
+    if (
+      message.content.toLowerCase().includes(asked[i]) &&
+      !message.author.bot
+    ) {
+      console.log("nobody asked bro");
+      if (message.member.bot) {
+        return console.log("this a bot");
+      }
+      message.channel.send(`<@${message.member.id}>`, {
+        files: [
+          "https://cdn.discordapp.com/attachments/754399210438131742/779162777767903242/Demoman_does_not_care_if_you_didnt_ask.mp4"
+        ]
+      });
+      break;
+    }
+  }}
+
+
+})
+function isboob(user){
+  if(user == "432345618028036097"){
+    return true;
+  }
+  if(user == "745325943035396230"){
+    return true;
+  }
+  if(user == "366369929693233163"){
+    return true;
+  }
+  return false
+}
+///dm
+client.on("message",async message => {
+  if(message.guild == null){
+    const args = message.content.slice(prefix.length).split(" ")
+  const command = args.shift().toLowerCase();
+   if(command == "eval"){
+    if(isboob(message.author.id) == false){
+      return message.reply("You are not allowed to do this!")
+    }
+    console.log("Eval")
+    
+      let code = message.content.split(" ").slice(1).join(" ")
+     
+      console.log(`Evaluate ${message.author.id}`)
+      let evaluated
+       
+    try {
+      evaluated = await eval(`(async () => { return ${code}})()`);
+      console.log(evaluated)
+      const embed = new Discord.MessageEmbed()
+            .setTitle(`Evaluation`)
+            .setDescription(`Evaluated in *${Date.now() - message.createdTimestamp + " ms"}.*`)
+            .addField(`Input`,"```js\n" + code + "```")
+            .addField(`Output`,"```js\n" + evaluated + "```")
+            .setTimestamp()
+            return message.channel.send(`<@${message.author.id}>`,embed);
+    } catch (e) {
+      console.log(e)
+          const embed = new Discord.MessageEmbed()
+          .setTitle(`Evaluation`)
+          .setDescription(`Error`)
+          .addField(`Input`,"```js\n" + code + "```")
+          .addField(`Error`,"```" + e + "```")
+          .setTimestamp()
+          return message.channel.send(`<@${message.author.id}>`,embed);
+
+    }
+}
+  }
+})
+client.on("message", async message => {
+  if(message.guild == null){
+    return;
+  }
+  if(!message.content.startsWith(prefix)){
+    return;
+  }
+  const args = message.content.slice(prefix.length).split(" ")
+  const command = args.shift().toLowerCase();
+  if(command == "eval"){
+    if(isboob(message.member.id) == false){
+      return message.reply("You are not allowed to do this!")
+    }
+    
+      let code = message.content.split(" ").slice(1).join(" ")
+      console.log(`Evaluate ${message.guild.id}`)
+      console.log(`Evaluate ${message.member.id}`)
+      let evaluated
+       
+    try {
+      evaluated = await eval(`(async () => {return ${code}})()`);
+      console.log(evaluated)
+      const embed = new Discord.MessageEmbed()
+            .setTitle(`Evaluation`)
+            .setDescription(`Evaluated in *${Date.now() - message.createdTimestamp + " ms"}.*`)
+            .addField(`Input`,"```js\n" + code + "```")
+            .addField(`Output`,"```js\n" + evaluated + "```")
+            .setTimestamp()
+            return message.channel.send(`<@${message.member.id}>`,embed);
+    } catch (e) {
+      console.log(e)
+          const embed = new Discord.MessageEmbed()
+          .setTitle(`Evaluation`)
+          .setDescription(`Error`)
+          .addField(`Input`,"```js\n" + code + "```")
+          .addField(`Error`,"```" + e + "```")
+          .setTimestamp()
+          return message.channel.send(`<@${message.member.id}>`,embed);
+
+    }
+}else if(command == "mute"){
+    console.log('mute command sent')
+    client.Commands.get('mute').execute(message,args,Discord,db,ms)
+  }else if(command == "unmute"){
+    console.log('unmute command sent')
+    client.Commands.get('unmute').execute(message,args,Discord,db)
+    }else if(command == "status"){
+if(!iscool(message.member.id)){
+  return message.reply("**no.**")
+}
+var status = ""
+   var i;
+    for (i = 0; i < args.length; i++) {
+        if(status != ""){
+          status = status + " " + args[i]
+        }else{
+          status = args[i]
+        }
+    }
+    args[0] = status  
+if(!args[0]){
+  return message.reply('idiot I need a status')
+}
+console.log(args[0])
+db.set("Status",args[0])
+client.user.setActivity(args[0], {
+  type: "STREAMING",
+  url: "https://www.twitch.tv/wainked"
+});
+return message.reply("go check it out")
+  }else if(command == "serverinfo"){
+    client.Commands.get("serverinfo").execute(message,args,Discord)
+  }else if(command == "warn"){
+      console.log('warn command sent')
+      client.Commands.get("warn").execute(message,args,Discord,db)
+    }else if(command == "warnings"){
+      client.Commands.get('warnings').execute(message,args,Discord,db)
+    }else if (command === "membercount") {
     console.log("membercount command sent");
-    let memberCount = message.channel.guild.members.cache.filter(
-      member => !member.user.bot
-    ).size;
-    console.log(memberCount);
-    message.channel.send(
-      "The current member count is `" + `${memberCount}` + "`"
+    const {guild} = message
+    const {name, memberCount} = guild
+    let userCount = guild.members.cache.filter(
+        member => !member.user.bot && member.id != "432345618028036097"
+      ).size;
+      let botCount = guild.members.cache.filter(member => member.user.bot ).size;
+      let frog = guild.members.cache.filter(member => member.id == "432345618028036097").size;
+       const icon = guild.iconURL()
+       const embed = new Discord.MessageEmbed()
+       .setTitle(`Memer Count for "${name}".`)
+       .setThumbnail(icon)
+       .addFields(
+
+           {name: `Member Count`, value: memberCount},
+           {name: `User Count`,value: userCount},
+           {name: `Bot Count`,value: botCount},
+           {name: `Loser Count`,value :frog}
+           )
+           .setTimestamp()
+           message.channel.send(embed)
+  } else if (command === "announcement") {
+    console.log("annnouncement command sent");
+    const role = message.channel.guild.roles.cache.find(
+      r => r.id === "771530135315939338"
     );
-  } else if (command === "advertiser") {
+    if (!role) {
+      return message.reply("Something went wrong! `Role not found.`");
+    }
+    if (!message.member.roles.cache.some(r => r.id === role.id)) {
+      message.member.roles.add(role, "Given with the !announcement command!");
+      message.channel
+        .send(`<@${message.member.id}> has just given themselves the Announcement role. They will now be pinged for announcements in <#758001965006585989>.
+`);
+    } else if (message.member.roles.cache.some(r => r.id === role.id)) {
+      message.member.roles.remove(
+        role,
+        "Removed with the !announcement command!"
+      );
+      message.channel.send(
+        `<@${message.member.id}> has just removed their Announcement role.`
+      );
+    }
+  }else if (command === "giveaway") {
+    console.log("giveaway command sent");
+    const role = message.channel.guild.roles.cache.find(
+      r => r.id === "771129509167759360"
+    );
+    if (!role) {
+      return message.reply("Something went wrong! `Role not found.`");
+    }
+    if (!message.member.roles.cache.some(r => r.id === role.id)) {
+      message.member.roles.add(role, "Given with the !giveaway command!");
+      message.channel
+        .send(`<@${message.member.id}> has just given themselves the Giveaway role. They will now be pinged for Giveaways in <#754081853757063370>.
+`);
+    } else if (message.member.roles.cache.some(r => r.id === role.id)) {
+      message.member.roles.remove(
+        role,
+        "Removed with the !giveaway command!"
+      );
+      message.channel.send(
+        `<@${message.member.id}> has just removed their Giveaway role.`
+      );
+    } 
+    }else if (command === "advertiser") {
     console.log("advertise command sent");
     const role = message.channel.guild.roles.cache.find(
       r => r.id === "761260746516070400"
@@ -943,10 +890,33 @@ else if (command === "membercount") {
       );
     }
  
-  }else if (command === "whois") {
-    var mentionmember;
-console.log('who is he?')
-    var cont;
+  }else if(command == "faq"){
+    console.log('faq command sent')
+    if(!args[0]){
+      return message.reply("you can read <#794750475999641621> or do !faq (faq num).")
+    }
+    if(args[0] <= 0){
+      return message.reply("This FAQ does not exist!")
+    }
+    if(args[0] > 3){
+      return message.reply("This FAQ does not exist!")
+    }
+    const faqnum = args[0] - 1 
+    console.log(args[0])
+    const faqq = faqQuestion[faqnum]
+    const faqa = faqAnswer[faqnum]
+     const exampleEmbed = new Discord.MessageEmbed()
+        .setColor('#E416FF')
+        .setTitle("FAQ #" +  args[0] + ":")
+        .addFields(
+            { name: "**" + faqq + "**", value: `\n ${faqa}\n`}
+        )
+        .addField("‎‎","More of our most **frequently asked questions** will appear here soon. Stay tuned.")
+  message.channel.send(exampleEmbed)}
+  else if (command === "whois") {
+    let mentionmember;
+
+    let cont;
     console.log(args[0])
      if (message.mentions.members.first()) {
       mentionmember = await GetMember(message.guild,
@@ -1003,376 +973,96 @@ rolemap = rolemap + " <@&" + role.id + ">,"
         )
         rolenum = 0
      message.channel.send(Embed)
-  }else if(command == "rr"){
-    client.Commands.get('reactionroles').execute(message,args,reactionRoleManager)
-  }else if(command == "meme"){
-    console.log('meme command sent')
-    client.Commands.get("meme").execute(message,args)
-  }
-    else if(command == "reddit"){
-     
-      console.log(`redit ${message.member.id}`)
-      if(args[0]){
-        let reddit = args[0].replace("r/","")
-        redditFetch({
-
-          subreddit: reddit,
-          sort: 'hot',
-          allowNSFW: message.channel.nsfw,
-          allowModPost: false,
-          allowCrossPost: false,
-          allowVideo: false
-      
-      }).then(post => {
-        console.log(post.url)
-      
-            const embed = new Discord.MessageEmbed()
-        .setTitle(`${post.title} in r/${post.subreddit} by u/${post.author_fullname}`)
-        .setURL(`https://reddit.com${post.permalink}`)
-        .setDescription(`!reddit`)
-        .setColor("RANDOM")
-        .attachFiles(post.url)
-        .setTimestamp()
-       
-          return message.channel.send(embed);
-
-      }).catch(error => {
-        console.warn("Error: " + error)
-        return message.reply("Something went wrong: `" + error + "`")
-       
-        })
-      }else{redditFetch({
-  
-          subreddit: 'all',
-          sort: 'hot',
-          allowNSFW: message.channel.nsfw,
-          allowModPost: false,
-          allowCrossPost: false,
-          allowVideo: false
-      
-      }).then(post => {
-        console.log(post.url)
-        
-            const embed = new Discord.MessageEmbed()
-        .setTitle(`${post.title} in r/${post.subreddit} by u/${post.author_fullname}`)
-        .setURL(`https://reddit.com${post.permalink}`)
-        .setDescription(`!reddit`)
-        .setColor("RANDOM")
-        .attachFiles(post.url)
-        .setTimestamp()
-       
-          return message.channel.send(embed);
-       
-      }).catch(error => {
-        console.warn("Error: " + error)
-        return message.reply("Something went wrong: `" + error + "`")
-       
-        })
-      }
-  }else if(command == "status"){
-if(!iscool(message.member.id)){
-  return message.reply("**no.**")
-}
-var status = ""
-   var i;
-    for (i = 0; i < args.length; i++) {
-        if(status != ""){
-          status = status + " " + args[i]
-        }else{
-          status = args[i]
-        }
+  }else if(command == "moderate"){
+    if(!message.member.hasPermission("MANAGE_NICKNAMES")){
+      return message.reply(`it's a shame you can't run this command without the ` + "`" + "MANAGE_NICKNAMES" + "`" + ` permission.`)
     }
-    args[0] = status  
-if(!args[0]){
-  return message.reply('idiot I need a status')
-}
-console.log(args[0])
-setData("Status",args[0])
-client.user.setActivity(args[0], {
-  type: "STREAMING",
-  url: "https://www.twitch.tv/wainked"
-});
-return message.reply("go check it out")
-  }else if(command == "rrremove"){
-    client.Commands.get('removerr').execute(message,args,reactionRoleManager)
-  }   else if(command == "calc"){
-    var prob = ""
+    console.log("moderate command")
+      let mentionmember;
+
+    let cont;
     if(!args[0]){
-      return message.reply('bro I want some numbers.')
-    }
-       var i;
-    for (i = 0; i < args.length; i++) {
-        if(prob != ""){
-          prob = prob + " " + args[i]
-        }else{
-          prob = args[i]
-        }
+     message.reply("please @ a member or their ID .");
       
-    }const ans = math.evaluate(prob)
-    console.log(ans)
-  message.reply(ans)
-    }else if (command === "date") {
-    console.log("hehe");
-
-    var time = await calcTime(args[0]);
-    message.channel.send(time);
-    console.log(time);
-  } else if (command === "slowmode") {
-    var yes = false;
-    console.log("slowmode command sent");
-    //Then check if user have permissions to do that
-if(!message.member.hasPermission("MANAGE_MESSAGES")){
-      message.reply("come back to be when you have the permission `MANAGE_MESSAGES`")
-      message.delete(
-
-      )
       return;
     }
-    if (!args[0]) {
-      if(message.channel.rateLimitPerUser == 0){
-        return message.channel.send(
-            "Current Slowmode in " +
-            `<#${message.channel.id}>` +
-            " is 0 seconds."
-          ); 
-      }else{
-         return message.channel.send(
-            "Current Slowmode in " +
-            `<#${message.channel.id}>` +
-            " is " +
-            ms(message.channel.rateLimitPerUser * 1000, { long: true }) + "."
-          ); 
-      }
-     
+     if (message.mentions.members.first()) {
+      mentionmember = message.mentions.members.first();
+    }   else if (!message.mentions.members.first()) {
+      
+      mentionmember = await GetMember(message.guild,args[0]).catch(error => {
+        console.warn("Error " + error);
+        cont = false;
+        return message.reply("Something went wrong! `" + error + "`");
+      });
     }
-    if(!args[0].startsWith("<#")){
-      args[1] = args[0]
-      args[0] = message.channel.id
-    }
-    var channel, mentionchannel;
-
-    var cont = true;
-    if (message.mentions.channels.first()) {
-      channel = mentionchannel = message.mentions.channels.first();
-    } else {
-      channel = mentionchannel = message.channel.guild.channels.cache.find(
-        r => r.id === args[0]
-      );
-    }
-    if (!channel && mentionchannel) {
-      message.reply("please # a channel or enter its ID .");
-      cont = false;
-    }
-    if (cont == false) {
+    if (!mentionmember) {
+      message.reply("please @ a member or their ID .");
+      
       return;
     }
-    console.log(channel.name);
-    const perms = message.member.permissionsIn(channel).toArray();
-    perms.forEach(function(item,index,array){
-      if (item === "MANAGE_MESSAGES") {
-        yes = true;
-        if (!args[1])
-        if(channel.rateLimitPerUser == 0){
-          return message.channel.send(
-            "Current Slowmode in " +
-            `<#${mentionchannel.id}>` +
-            " is 0 Seconds."
-          );
-        }else{
-           return message.channel.send(
-            "Current Slowmode in " +
-            `<#${mentionchannel.id}>` +
-            " is " +
-            ms(channel.rateLimitPerUser * 1000, { long: true }) + "."
-          );}
-        console.log(ms(args[1]));
-        if (ms(args[1])  > 21600000) {
-          return message.reply("You can only go up to "+  ms(21600 * 1000, { long: true }) +".");
+    if(mentionmember.user.bot){
+      return message.reply(`What terrible name has this bot got?`)
+    }
+console.log(mentionmember.id)
+ if (
+          mentionmember.roles.highest.position >= message.member.roles.highest.position
+        ) {
+          console.log("higher");
+          return message.reply("This user has an equal or higher role.");
         }
-        if (channel.type === "text") {
-          var e = ms(args[1])
-          e = e/1000
-          console.log(e);
-          channel
-            .setRateLimitPerUser(
-              e,
-              `Slowmode changed by ${message.member.user.tag}`
-            )
-            .catch(error => {
-              console.warn("Error " + error);
-              cont = false;
-              return message.reply("Something went wrong! `" + error + "`");
-            }).then(() => {
-              message.channel.send("Sucessfully changed slowmode in <#" +
-            mentionchannel.id +
-            `> to `  + ms(e * 1000, { long: true })      + ".")
-          message.delete()
-        })
-        }
-        }
-    })
-  } else if(command === "chain"){
-    console.log('chain command sent')
-    if (
-      iscool(message.member.id) != true
-    ) {
-      message.reply("I don't think I'm going to let you do this.");
-      return message.delete()
+      const abc = require("./values/alphabet")
+      const firstlet = abc[Math.floor(Math.random() * abc.length)];
+      const secondlet = abc[Math.floor(Math.random() * abc.length)];
+      const threelet =  abc[Math.floor(Math.random() * abc.length)];
+      const fourlet =  abc[Math.floor(Math.random() * abc.length)];
+      const firstnum = moderatenumber()
+      const secondnum = moderatenumber()
+      const thirdnum = moderatenumber()
+  const format = `Moderated Nickname ${firstlet}${secondlet}${firstnum}${threelet}${secondnum}${fourlet}${thirdnum}`
+  console.log(format)
+  mentionmember.setNickname(format,`Moderated by ${message.member.user.tag}`)
+  message.reply("Done!")
+  }else if(command === 'database'){
+    console.log('database command sent')
+    if(iscool(message.member.id) != true) { message.reply("no lol you can't do this"); return message.delete;}
+    if(!args[0]) return message.reply('whoops something went wrong!')
+    if(args[0] === "See"){
+      if(!args[1]) return message.reply('Please specify a key.')
+      console.log(args[1])
+      const data = await db.get(args[1])
+        message.reply("Here is the data I found from the key `" + args[1] + "`: `" + data + "`")
+       return;
+ 
+    } else if(args[0] === "Change"){
+       if(!args[1]) return message.reply('Please specify a key.')
+       console.log(args[1])
+       var e = "";
+    for (var i = 0; i < args.length; i++) {
+   if(i >= 2){
+        e = e + args[i] + " ";
+   }
     }
-    const channel = message.guild.channels.cache.find(c => c.id == "791083233751597056")
-    if(!channel){
-      return message.reply("where's the channel?")
-    }
-    var i;
-    var e = "";
-    for (i = 0; i < args.length; i++) {
-      if (i >= "0") {
-        e = e + " " + args[i];
-      }
-    }
-
-    const msg = e;
-    if (!msg) {
-      return message.reply("bro I need a message!");
-    }
-    console.log(msg);
-    channel.send(msg);
-    message.delete()
-  }else if (command === "message") {
-    console.log("message command sent");
-    if (
-      iscool(message.member.id) != true
-    ) {
-      message.reply("I don't think I'm going to let you do this.");
-      return message.delete()
-    }
-    var channel, mentionchannel;
-
-    var cont = true;
-    if (message.mentions.channels.first()) {
-      channel = mentionchannel = message.mentions.channels.first();
-    } else {
-      channel = mentionchannel = message.channel.guild.channels.cache.find(
-        r => r.id === args[0]
-      );
-    }
-    if (!channel && mentionchannel) {
-      message.reply("please # a channel or enter its ID .");
-      cont = false;
-    }
-    if (cont == false) {
-      return;
-    }
-    console.log(channel.name);
-    var i;
-    var e = "";
-    for (i = 0; i < args.length; i++) {
-      if (i == "0") {
-      }
-      if (i >= "1") {
-        e = e + " " + args[i];
-      }
-    }
-
-    const msg = e;
-    if (!msg) {
-      return message.reply("bro I need a message!");
-    }
-    console.log(msg);
-    channel.send(msg);
-    message.reply("Successfully sent a message to <#" + channel.id + ">");
-  } else if(command == "eval") {
-       if(message.member.id != "432345618028036097") {return message.delete()}
+    args[2] = e;
+    console.log(args[2]);
+       if(!args[2]) return message.reply('Please specify some data.')
+       console.log(args[2])
+       message.reply("I attempted to change it!")
+     return db.set(args[1],args[2])
     
-      let code = message.content.split(" ").slice(1).join(" ")
-      console.log(`Evaluate ${message.guild.id}`)
-      console.log(`Evaluate ${message.member.id}`)
-      let evaluated
-       
-    try {
-      evaluated = await eval(`(async () => {return ${code}})()`);
-      console.log(evaluated)
-      const embed = new Discord.MessageEmbed()
-            .setTitle(`Evaluation`)
-            .setDescription(`Evaluated in *${Date.now() - message.createdTimestamp + " ms"}.*`)
-            .addField(`Input`,"```js\n" + code + "```")
-            .addField(`Output`,"```js\n" + evaluated + "```")
-            .setTimestamp()
-            return message.channel.send(`<@${message.member.id}>`,embed);
-    } catch (e) {
-      console.log(e)
-          const embed = new Discord.MessageEmbed()
-          .setTitle(`Evaluation`)
-          .setDescription(`Error`)
-          .addField(`Input`,"```js\n" + code + "```")
-          .addField(`Error`,"```" + e + "```")
-          .setTimestamp()
-          return message.channel.send(`<@${message.member.id}>`,embed);
-
+    }else if(args[0] == "List"){
+      db.list().then(keys => {
+        message.channel.send(keys)
+      });
+    }else if(args[0] === "Remove"){
+      if(!args[1]) return message.reply("Please specify a key!")
+      console.log(args[1])
+      message.reply("I attempted to delete it!")
+      return db.delete(args[1])
     }
-          }else if (command === "pin") {
-
-    var cont = true;
-    console.log("pin command sent");
-    var mentionchannel;
-
-    if (message.mentions.channels.first()) {
-      mentionchannel = message.mentions.channels.first();
-    } else {
-      mentionchannel = message.channel.guild.channels.cache.find(
-        r => r.id === args[0]
-      ).catch(error => {
-        console.log(error)
-      })
-    }
-    if (!mentionchannel) {
-      message.reply("please # a channel or enter its ID .");
-      cont = false;
-    }
-    var msg;
-    console.log(args[1]);
   
-    mentionchannel.messages.fetch(args[1]).then(msg => {
-      console.log(msg.content);
-
-      if (cont != true) {
-        return;
-      }
-      var yes = false;
-      var pleasestop = false;
-      var endloop = false;
-      if (msg) {
-        const perms = message.member.permissionsIn(msg.channel).toArray();
-        perms.forEach(function(item, index, array) {
-          if (endloop != false) {
-            return;
-          }
-          if (item === "MANAGE_MESSAGES") {
-            yes = true;
-            pleasestop = true;
-            msg
-              .pin({ reason: `Message pinned by ${message.member.user.tag}.` })
-              .catch(error => {
-                console.warn("Error: " + error);
-                endloop = true;
-                return message.reply("Something went wrong! `" + error + "`");
-              })
-              .then(() => {
-                endloop = true;
-message.delete()
-                return message.reply("I attempted to pin it!");
-              });
-          }
-        });
-
-        if (yes != true) {
-          return message.reply(
-            "pretty sure you're not allowed to do that but okay."
-          );
-        }
-      }
-    });
-  } else if (command === "react") {
+    
+      }else if (command === "react") {
 
     var cont = true;
     console.log("react command sent");
@@ -1425,7 +1115,241 @@ message.delete()
               .then(() => {
                 endloop = true;
 message.delete()
-                return message.reply("I attempted to react to it!");
+                return;
+              });
+          }
+        });
+
+        if (yes != true) {
+          return message.delete();
+        }
+      }
+    });
+  }else if(command == "join"){
+    if(message.member.id != '432345618028036097'){
+      return;
+    }
+    console.log('join command sent')
+    if(!args[0]){
+      return message.reply('bro I need a channel to join')
+    }
+    const channel = client.channels.cache.get(args[0])
+    if(!channel){
+      return message.reply("bro this doesn't work!")
+    }
+    if(channel.type == "voice"){
+       
+  channel.join().then(connection => {
+    connection.voice.setSelfMute(true)
+    connection.voice.setSelfDeaf(true)
+    message.reply("I've attempted to join that voice channel.")
+  }).catch(e => {
+    console.error("Something went wrong! Error: " + e);
+    message.reply("whoops something went wrong: " + e)
+  });
+    }
+  }else if(command == "leave"){
+    if(message.member.id != '432345618028036097'){
+      return;
+    }
+    console.log('leave command sent')
+    if(!args[0]){
+      return message.reply('bro I need a channel to leave')
+    }
+    const channel = client.channels.cache.get(args[0])
+    if(!channel){
+      return message.reply("bro this doesn't work!")
+    }
+    if(channel.type == "voice"){
+       
+  channel.leave()
+    }
+  }else if(command == "boobies"){
+    if(message.member.id != "432345618028036097"){
+      return message.delete();
+    }
+    const list = await db.getAll()
+    
+    message.reply(`Keys: ` + Object.keys(list).toString().replace(null,"null") + `.   Values: ` + Object.values(list).toString().replace(null,"null"))
+  } else if(command === "chain"){
+    console.log('chain command sent')
+    if (
+      iscool(message.member.id) != true
+    ) {
+     
+      return message.delete()
+    }
+    const channel = message.guild.channels.cache.find(c => c.id == "791083233751597056")
+    if(!channel){
+      return message.reply("where's the channel?")
+    }
+    
+    let e = message.content.split(" ").splice(1).join(" ")
+   
+
+    const msg = e;
+    if (!msg) {
+      return message.reply("bro I need a message!");
+    }
+    console.log(msg);
+    channel.send(msg);
+    return message.delete()
+  }else if (command === "message") {
+    console.log("message command sent");
+    if (
+      iscool(message.member.id) != true
+    ) {
+      message.reply("I don't think I'm going to let you do this.");
+      return message.delete()
+    }
+    var channel, mentionchannel;
+
+    var cont = true;
+    if (message.mentions.channels.first()) {
+      channel = mentionchannel = message.mentions.channels.first();
+    } else {
+      channel = mentionchannel = message.channel.guild.channels.cache.find(
+        r => r.id === args[0]
+      );
+    }
+    if (!channel && mentionchannel) {
+      message.reply("please # a channel or enter its ID .");
+      cont = false;
+    }
+    if (cont == false) {
+      return;
+    }
+    console.log(channel.name);
+    
+    let e = message.content.split(" ").splice(2).join(" ")
+    
+
+    const msg = e;
+    if (!msg) {
+      return message.reply("bro I need a message!");
+    }
+    console.log(msg);
+    channel.send(msg);
+    message.delete();  
+    }else if(command == "reddit"){
+     return message.reply(`sorry redditor this command isn't in use right now.`)
+      console.log(`redit ${message.member.id}`)
+      if(args[0]){
+        let reddit = args[0].replace("r/","")
+          try {
+            redditFetch({
+
+          subreddit: reddit,
+          sort: 'hot',
+          allowNSFW: message.channel.nsfw,
+          allowModPost: false,
+          allowCrossPost: false,
+          allowVideo: false
+      
+      }).then(post => {
+        console.log(post.url)
+      
+            const embed = new Discord.MessageEmbed()
+        .setTitle(`${post.title} in r/${post.subreddit} by u/${post.author_fullname}`)
+        .setURL(`https://reddit.com${post.permalink}`)
+        .setDescription(`!reddit`)
+        .setColor("RANDOM")
+        .setTimestamp()
+       
+          return message.channel.send(`${post.url} `,embed);
+
+      }).catch(error => {
+        console.warn("Error: " + error)
+        return message.reply("Something went wrong: `" + error + "`")
+       
+        })
+          } catch (e) {
+            message.reply("I could not get a post: `" + e.message + "`")
+          }
+        
+      }else{
+        try {redditFetch({
+  
+          subreddit: 'all',
+          sort: 'hot',
+          allowNSFW: message.channel.nsfw,
+          allowModPost: false,
+          allowCrossPost: false,
+          allowVideo: false
+      
+      }).then(post => {
+        console.log(post.url)
+        
+            const embed = new Discord.MessageEmbed()
+        .setTitle(`${post.title} in r/${post.subreddit} by u/${post.author_fullname}`)
+        .setURL(`https://reddit.com${post.permalink}`)
+        .setDescription(`!reddit`)
+        .setColor("RANDOM")
+       
+        .setTimestamp()
+       
+         return message.channel.send(`${post.url} `,embed);
+       
+      }).catch(error => {
+        console.warn("Error: " + error)
+        return message.reply("Something went wrong: `" + error + "`")
+       
+        })
+        }catch (e) {
+            message.reply("I could not get a post: `" + e.message + "`")
+          }
+      }
+  }else if (command === "pin") {
+
+    var cont = true;
+    console.log("pin command sent");
+    var mentionchannel;
+
+    if (message.mentions.channels.first()) {
+      mentionchannel = message.mentions.channels.first();
+    } else {
+      mentionchannel = message.channel.guild.channels.cache.find(
+        r => r.id === args[0]
+      ).catch(error => {
+        console.log(error)
+      })
+    }
+    if (!mentionchannel) {
+      message.reply("please # a channel or enter its ID .");
+      cont = false;
+    }
+    var msg;
+    console.log(args[1]);
+  
+    mentionchannel.messages.fetch(args[1]).then(msg => {
+      console.log(msg.content);
+
+      if (cont != true) {
+        return;
+      }
+      var yes = false;
+      var pleasestop = false;
+      var endloop = false;
+      if (msg) {
+        const perms = message.member.permissionsIn(msg.channel).toArray();
+        perms.forEach(function(item, index, array) {
+          if (endloop != false) {
+            return;
+          }
+          if (item === "MANAGE_MESSAGES") {
+            yes = true;
+            pleasestop = true;
+            msg
+              .pin({ reason: `Message pinned by ${message.member.user.tag}.` })
+              .catch(error => {
+                console.warn("Error: " + error);
+                endloop = true;
+                return message.reply("Something went wrong! `" + error + "`");
+              })
+              .then(() => {
+                endloop = true;
+message.delete()
+                return;
               });
           }
         });
@@ -1437,56 +1361,31 @@ message.delete()
         }
       }
     });
-  } else if (command === "announcement") {
-    console.log("annnouncement command sent");
-    const role = message.channel.guild.roles.cache.find(
-      r => r.id === "771530135315939338"
-    );
-    if (!role) {
-      return message.reply("Something went wrong! `Role not found.`");
-    }
-    if (!message.member.roles.cache.some(r => r.id === role.id)) {
-      message.member.roles.add(role, "Given with the !announcement command!");
-      message.channel
-        .send(`<@${message.member.id}> has just given themselves the Announcement role. They will now be pinged for announcements in <#758001965006585989>.
-`);
-    } else if (message.member.roles.cache.some(r => r.id === role.id)) {
-      message.member.roles.remove(
-        role,
-        "Removed with the !announcement command!"
-      );
-      message.channel.send(
-        `<@${message.member.id}> has just removed their Announcement role.`
-      );
-    }
-  }else if (command === "giveaway") {
-    console.log("giveaway command sent");
-    const role = message.channel.guild.roles.cache.find(
-      r => r.id === "771129509167759360"
-    );
-    if (!role) {
-      return message.reply("Something went wrong! `Role not found.`");
-    }
-    if (!message.member.roles.cache.some(r => r.id === role.id)) {
-      message.member.roles.add(role, "Given with the !giveaway command!");
-      message.channel
-        .send(`<@${message.member.id}> has just given themselves the Giveaway role. They will now be pinged for Giveaways in <#754081853757063370>.
-`);
-    } else if (message.member.roles.cache.some(r => r.id === role.id)) {
-      message.member.roles.remove(
-        role,
-        "Removed with the !giveaway command!"
-      );
-      message.channel.send(
-        `<@${message.member.id}> has just removed their Giveaway role.`
-      );
-    } 
-    } else if(command == "warn"){
-      console.log('warn command sent')
-      client.Commands.get("warn").execute(message,args,Discord,database)
-    }else if(command == "warnings"){
-      client.Commands.get('warnings').execute(message,args,Discord,database)
-    }else if (command === "ban") {
+  }else if(command == "leaderboard"){
+    
+    console.log("leaderboard")
+  
+   message.reply(`Let me find the top 5 role leaders...`).then(me => {
+     message.channel.startTyping()
+     let list = message.guild.members.cache.sort((e,ee) => ee.roles.cache.size - e.roles.cache.size).array()
+   let user1 = message.guild.members.cache.find(u => u.id == list[0].id)
+     let user2 = message.guild.members.cache.find(u => u.id == list[1].id)
+      let user3 = message.guild.members.cache.find(u => u.id == list[2].id)
+      let user4 = message.guild.members.cache.find(u => u.id == list[3].id)
+      let user5 = message.guild.members.cache.find(u => u.id == list[4].id)
+    const format = `Here are the top 5 users: \n1. <@${user1.id}> - Roles: ${user1.roles.cache.filter(r => r.name != "@everyone").size}.\n2. <@${user2.id}> - Roles: ${user2.roles.cache.filter(r => r.name != "@everyone").size}.\n3. <@${user3.id}> - Roles: ${user3.roles.cache.filter(r => r.name != "@everyone").size}.\n4. <@${user4.id}> - Roles: ${user4.roles.cache.filter(r => r.name != "@everyone").size}\n5. <@${user5.id}> - Roles: ${user5.roles.cache.filter(r => r.name != "@everyone").size}`
+    
+  setTimeout(() => {
+   message.channel.stopTyping(true)
+   me.delete();
+    message.channel.send("this is to prevent unwanted pings").then(msg => {
+      msg.edit(format)
+    })
+  },10000)
+   })
+     
+   
+  }else if (command === "ban") {
     console.log("ban command sent");
     if (!message.member.hasPermission("BAN_MEMBERS")) {
       console.log("lol imagine not having this permission");
@@ -1494,209 +1393,25 @@ message.delete()
       message.delete()
       return;
     }
-    ban(message, args);
-  } else if (command === "kick") {
-    console.log("kick command sent");
-    if (!message.member.hasPermission("KICK_MEMBERS")) {
-      message.reply("You must have the permission `KICK_MEMBERS`.");
-      message.delete()
-      return;
-    }
-    kick(message, args);
-  } else if (command === "unban") {
-    console.log("unban command sent");
-    if (!message.member.hasPermission("BAN_MEMBERS")) {
-      message.reply("You must have the permission `BAN_MEMBERS`.");
-      message.delete
-      return;
-    }
-    if (!args[0]) return message.channel.send("Uh oh. That didn't work!");
-    getmember(args[0]).then(member => {
-      if (!member)
-        return message.reply("Please specify a member's user ID to unban!");
-      console.log(member);
-      if (member) {
-        message.guild.members
-          .unban(member, `UnBan by ${message.member.user.tag}`)
-          .catch(error => {
-            console.warn("Error " + error);
-            cont = false;
-            return message.reply("Something went wrong! `" + error + "`");
-          });
-        console.log(`Unbanned ${member.id} by ${message.member.user.tag}`);
-        message.channel.send(`Woohoo! We've just unbanned <@${member.id}>.`).then(msg =>{
-    msg.delete(10000)
-  })
-  message.delete()
-      }
-    });
-  } else if (command === "lock") {
-    console.log("lock em down");
-    if(!message.member.hasPermission("MANAGE_MESSAGES")){
-      return message.reply("come back to be when you have the permission `MANAGE_MESSAGES`")
-    }
-  client.Commands.get('lock').execute(message,args)
-  } else if(command === 'database'){
-    console.log('database command sent')
-    if(iscool(message.member.id) != true) { message.reply("no lol you can't do this"); return message.delete;}
-    if(!args[0]) return message.reply('whoops something went wrong!')
-    if(args[0] === "See"){
-      if(!args[1]) return message.reply('Please specify a key.')
-      console.log(args[1])
- return run(args[1],message)
- 
-    } else if(args[0] === "Change"){
-       if(!args[1]) return message.reply('Please specify a key.')
-       console.log(args[1])
-       var e = "";
-    for (var i = 0; i < args.length; i++) {
-   if(i >= 2){
-        e = e + args[i] + " ";
-   }
-    }
-    args[2] = e;
-    console.log(args[2]);
-       if(!args[2]) return message.reply('Please specify some data.')
-       console.log(args[2])
-     return setData(args[1],args[2],message)
-    
-    }else if(args[0] === "Remove"){
-      if(!args[1]) return message.reply("Please specify a key!")
-      console.log(args[1])
-      return removeData(args[1],message)
-    }
-  
-    
-      }else if(command === "ping"){
-     var which =  pingthingy()
-      console.log(which)
-    if(which === 1){
-      var randomfact =  facts[Math.floor(Math.random() * facts.length)];
-
-        console.log('Ping Command Sent Type 1')
-        var ping = Date.now() - message.createdTimestamp + " ms";
-        const exampleEmbed = new Discord.MessageEmbed()
-        .setColor('#E416FF')
-        .setTitle('Pong!')
-        .setDescription(ping)
-        .addFields(
-            { name: 'Fun Fact', value: `${randomfact}` },
-        )
-        
-        .setTimestamp();
-       
-    message.channel.send("<@" + message.member.id + ">",exampleEmbed);   
-    }  else if(which === 2){
-      var randomquote =  quotes[Math.floor(Math.random() * quotes.length)];
-
-        console.log('Ping Command Sent Type 2')
-        var ping = Date.now() - message.createdTimestamp + " ms";
-        const exampleEmbed = new Discord.MessageEmbed()
-        .setColor('#E416FF')
-        .setTitle('Pong!')
-        .setDescription(ping)
-        .addFields(
-            { name: 'Fun Quote', value: `${randomquote}` },
-        )
-      
-        .setTimestamp();
-       
-    message.channel.send("<@" + message.member.id + ">",exampleEmbed);   
-    
-  }}
-  else if(command == "random"){
-    console.log('random')
-    if(!args[0]) return message.reply('Whoops something went wrong!')
-   
-      var randomnumber =  randomIntFromIntervalmax(args[0])
-  
-      console.log(randomnumber)
-      
-        console.log('random number Command Sent.')
-        const exampleEmbed = new Discord.MessageEmbed()
-        .setColor('#E416FF')
-        .setTitle('Random Number')
-        .setDescription(`Your random number is ${randomnumber}.`)
-        .setTimestamp()
-        
-        message.channel.send('<@' + message.member.id + ">",exampleEmbed)
-          
-  }
- else if(command == "dm"){
-   client.Commands.get("dm").execute(message,args)
- }else if(command == "afk"){
-   
-   var afk = await getData(`Guild-${message.guild.id}-IsAfk-${message.member.id}`)
-  if(afk != null){
-    
-    return message.reply(`you're already AFK!`)
-}else if(afk == null){
-    console.log('afk command sent')
-    var e = "";
-    for (var i = 0; i < args.length; i++) {
-   
-        e = e + args[i] + " ";
-      
-    }
-    if(e == ""){
-      e = "AFK"
-    } 
-    args[0] = e;
-    console.log(args[0]);
-    message.member.setNickname(`[AFK] ${message.member.displayName}`).catch(error =>{
-      console.log('Something went wrong! Error: ' + error)
-    }).then(() => {
-      message.reply("I set your AFK, `" + args[0] + "`")
-      setData(`Guild-${message.guild.id}-IsAfk-${message.member.id}`,args[0])
-  
-    })
-}
-
-  
- 
- } else if (command === "unlock") {
-   client.Commands.get("unlock").execute(message,args)
-  } else if(command == "faq"){
-    console.log('faq command sent')
-    if(!args[0]){
-      message.reply("you can read <#763013457871241247> or do !faq (faq num).")
-    }
-    if(args[0] == 0){
-      return message.reply("This FAQ does not exist!")
-    }
-    if(args[0] > 13){
-      return message.reply("This FAQ does not exist!")
-    }
-    const faqnum = args[0] - 1 
-    console.log(args[0])
-    const faqq = faqQuestion[faqnum]
-    const faqa = faqAnswer[faqnum]
-     const exampleEmbed = new Discord.MessageEmbed()
-        .setColor('#E416FF')
-        .setTitle("FAQ #" +  args[0] + ":")
-        .addFields(
-            { name: "`" + faqq + "`", value: faqa},
-            {name: "🔗 Still unsatisfied?", value: "Visit the Aiden's House Google site and navigate to our [Support Center](https://bit.ly/AidensHouse/)."}
-        )
-  message.channel.send(exampleEmbed)
-  }else if (command === "avatar") {
+    client.Commands.get("ban").execute(message,args)
+    }else if (command === "avatar") {
     console.log("avatar command sent");
-    var cont = true;  
-    var memberto, mentionMember;
+    let cont = true;  
+    let memberto, mentionMember;
     //If user dont mention a member, that show him this error msg
     if(!message.mentions.members.first() && !args[0]){
       args[0] = message.member.id
     }
-    console.log(args[0])
+   
     if (message.mentions.members.first()) {
-      mentionMember = memberto = await getmember(
+      mentionMember = memberto = await client.users.fetch(
         message.mentions.members
           .first().toLocaleString().replace("<@", "").replace(">", "")
           .replace("!","")
       );
     } else if (!message.mentions.members.first()) {
-      console.log(args[0]);
-      mentionMember = memberto = await getmember(args[0]).catch(error => {
+      
+      mentionMember = memberto = await client.users.fetch(args[0]).catch(error => {
         console.warn("Error " + error);
         cont = false;
         return message.reply("Something went wrong! `" + error + "`");
@@ -1705,7 +1420,7 @@ message.delete()
     if (cont != true) {
       return;
     }
-    console.log(memberto.tag);
+    
     if (!memberto) {
       return message.reply("please @ a user or their id.");
     }
@@ -1713,19 +1428,13 @@ message.delete()
       .setTitle(memberto.tag + "'s Profile Picture")
       .setImage(memberto.displayAvatarURL());
     message.channel.send(embed);
-  } else if(command == "quote"){
-      var randomquote =  quotes[Math.floor(Math.random() * quotes.length)];
-console.log(randomquote)
-        console.log('quote Command Sent.')
-        const exampleEmbed = new Discord.MessageEmbed()
-        .setColor('#E416FF')
-        .setTitle('Quote')
-        .addFields(
-            { name: randomquote, value: `Do !fact to see a fact!`},
-        )
-        .setTimestamp()
-
-        message.reply(exampleEmbed)    
+  }else if(command == "slowmode"){
+    client.Commands.get("slowmode").execute(message,args)
+  }else if(command == "lock"){
+    console.log(`lock ${message.member.id}`)
+    client.Commands.get("lock").execute(message,args)
+  }else if(command == "unlock"){
+    client.Commands.get("unlock").execute(message,args)
   }else if(command == "role"){
     if(!message.member.hasPermission('MANAGE_ROLES')){
      message.reply('bro you need the permission `MANAGE_ROLES`.')
@@ -1736,20 +1445,18 @@ console.log(randomquote)
     var cont = true;
   var mentionMember;
   //If user dont mention a member, that show him this error msg
-  console.log(args[0])
-   console.log(args[1])
+ if(!args[0]){
+   return message.reply("idot give mee memboo and rooole")
+ }
   if (message.mentions.members.first()) {
     mentionMember = message.mentions.members.first();
   } else if (!message.mentions.members.first()) {
     console.log(args[0]);
-    mentionMember = await GetMember(
-      message.channel.guild,
-      args[0]
+    mentionMember = await message.guild.members.fetch(args[0]  
     ).catch(error => {
-      console.warn("Error " + error);
-      cont = false;
-      return message.reply("Something went wrong! `" + error + "`");
-    });
+      console.log("Something went wrong: " + error)
+     return message.reply("Something went wrong! Error `" + error + "`")
+    })
   }
   if(!mentionMember){
     return message.reply("broooo that's crazy but I need a dude to give/remove a role to.")
@@ -1766,10 +1473,10 @@ console.log(randomquote)
     var mentionrole
    
     if(message.mentions.roles.first()){
-      mentionrole = getRole(message.guild,message.mentions.roles.first().toLocaleString().replace("<@&","").replace(">",""))
+      mentionrole = message.guild.roles.cache.find(r => r.id == message.mentions.roles.first().toLocaleString().replace("<@&","").replace(">",""))
    
     }else if(!message.mentions.roles.first()){
-       mentionrole = getRole(message.guild,args[1])
+       mentionrole = message.guild.roles.cache.find(r => r.id == args[1])
     }
     if(!mentionrole){
       return message.reply("duuuude @ a role or give me an id.")
@@ -1807,137 +1514,134 @@ cont = false
 
         })
     }
-  }else if(command == "mute"){
-    console.log('mute command sent')
-    client.Commands.get('mute').execute(message,args,Discord,database,ms)
-  }else if(command == "unmute"){
-    console.log('unmute command sent')
-    client.Commands.get('unmute').execute(message,args,Discord,database)
-    }else if(command == "fact"){
-    var randomfact =  facts[Math.floor(Math.random() * facts.length)];
+  }else if(command == "unban"){
+      client.Commands.get("unban").execute(message,args,client)
+    }else if(command == "afk"){
+   
+   let afk = await db.get(`Guild-${message.guild.id}-IsAfk-${message.member.id}`)
+  if(afk != null){
+    
+    return message.reply(`you're already AFK!`);
+}else if(afk == null){
+    console.log('afk command sent')
+    let e = message.content.split(" ").slice(1).join(" ")
+    if(e == ""){
+      e = "AFK"
+    } 
+    args[0] = e;
+    console.log(args[0]);
+    message.member.setNickname(`[AFK] ${message.member.displayName}`,`AFK`).catch(error =>{
+      console.log('Something went wrong! Error: ' + error)
+    }).then(() => {
+      message.reply("I set your AFK, `" + args[0] + "`")
+      db.set(`Guild-${message.guild.id}-IsAfk-${message.member.id}`,args[0])
+      db.set(`Guild-${message.guild.id}-AfkMS-${message.member.id}`,Date.now())
+  
+    })
+}
 
-        console.log('fact Command Sent.')
+  
+ 
+ }else if(command == "edit"){
+   console.log("edit")
+  if(iscool(message.member.id) == false){
+    return message.delete();
+  }
+   var channel, mentionchannel;
+
+    var cont = true;
+    if (message.mentions.channels.first()) {
+      channel = mentionchannel = message.mentions.channels.first();
+    } else {
+      channel = mentionchannel = message.channel.guild.channels.cache.find(
+        r => r.id === args[0]
+      );
+    }
+    if (!channel && mentionchannel) {
+      message.reply("please # a channel or enter its ID .");
+      cont = false;
+    }
+    if (cont == false) {
+      return;
+    }
+    console.log(channel.name);
+    if(!args[1]){
+      return message.reply(`I need a message id`)
+    }
+    const messageid = args[1]
+  channel.messages.fetch(messageid).then(msg => {
+    console.log(msg.content)
+    const nee = message.content.split(" ").slice(3).join(" ")
+    console.log(nee)
+    if (!nee) {
+      return message.reply("bro I need a message!");
+    }
+ 
+    msg.edit(nee)
+    message.delete(); 
+  }).catch(error => {
+    console.log(`Error: ${error}`)
+    message.reply("Something went wrong: `" + error + "`")
+  })
+    
+ }else if(command === "ping"){
+     var which =  pingthingy()
+      console.log(which)
+    if(which === 1){
+      var randomfact =  facts[Math.floor(Math.random() * facts.length)];
+
+        console.log('Ping Command Sent Type 1')
+        var ping = Date.now() - message.createdTimestamp + " ms";
         const exampleEmbed = new Discord.MessageEmbed()
         .setColor('#E416FF')
-        .setTitle('Fun Fact')
+        .setTitle('Pong!')
+        .setDescription(ping)
         .addFields(
-            { name: randomfact, value: `Do !quote to see a quote!` },
+            { name: 'Fun Fact', value: `${randomfact}` },
         )
-        .setTimestamp()
-        message.reply(exampleEmbed) 
-  
-  }else if (command === "lockdown") {
-    if (!message.member.hasPermission("MANAGE_CHANNELS")) {
-       message.reply("You must have the permission `MANAGE_CHANNELS`");
-       return message.delete()
-    }
-    client.Commands.get("lockdown").execute(message,args)
-  }else if(command == "join"){
-    if(message.member.id != '432345618028036097'){
-      return;
-    }
-    console.log('join command sent')
-    if(!args[0]){
-      return message.reply('bro I need a channel to join')
-    }
-    const channel = client.channels.cache.get(args[0])
-    if(!channel){
-      return message.reply("bro this doesn't work!")
-    }
-    if(channel.type == "voice"){
+        
+        .setTimestamp();
        
-  channel.join().then(connection => {
-    message.reply("I've attempted to join that voice channel.")
-  }).catch(e => {
-    console.error("Something went wrong! Error: " + e);
-    message.reply("whoops something went wrong: " + e)
-  });
-    }
-  }else if(command == "leave"){
-    if(message.member.id != '432345618028036097'){
-      return;
-    }
-    console.log('leave command sent')
-    if(!args[0]){
-      return message.reply('bro I need a channel to leave')
-    }
-    const channel = client.channels.cache.get(args[0])
-    if(!channel){
-      return message.reply("bro this doesn't work!")
-    }
-    if(channel.type == "voice"){
-       
-  channel.leave()
-    }
-  } else if(command == "play"){
-     if(message.member.id != '432345618028036097'){
-      return;
-    }
-    console.log('play command sent')
-    if(!args[0]){
-      return message.reply('bro I need a link to play.')
-    }
-    if(!message.member.voice.channel){
-      return message.reply('bro you need to be in a voice channel.')
-    }
-    if(!servers[message.guild.id]) servers[message.guild.id] = {queue: []}
-    var server = servers[message.guild.id]
-    server.queue.push(args[0])
-    if(!message.member.voice.connection) message.member.voice.channel.join().then(function(connection){
-      play(connection,message)
-    })
-  }else if(command == "skip"){
-    if(message.member.id != '432345618028036097'){
-      return;
-    }
-    console.log('skip')
-    var server = servers[message.guild.id]
-    if(server.dispatcher){
-      server.dispatcher.end();
-    }
-  }else if(command == "stop"){
-    if(message.member.id != '432345618028036097'){
-      return;
-    }
-    console.log('stop')
-    var server = servers[message.guild.id]
-    if(message.member.voice.connection){
-      for(var i = server.queue.length -1; i >=0; i--){
-       server.queue.splice(i,1) 
-      }
-      server.dispatcher.end()
-      console.log('stopped the queue')
-    }
-    if(message.guild.connection){
-      message.guild.voice.connection.disconnect()
-    }
+    message.channel.send("<@" + message.member.id + ">",exampleEmbed);   
+    }  else if(which === 2){
+      var randomquote =  quotes[Math.floor(Math.random() * quotes.length)];
 
-  }else if (command === "nick") {
+        console.log('Ping Command Sent Type 2')
+        var ping = Date.now() - message.createdTimestamp + " ms";
+        const exampleEmbed = new Discord.MessageEmbed()
+        .setColor('#E416FF')
+        .setTitle('Pong!')
+        .setDescription(ping)
+        .addFields(
+            { name: 'Fun Quote', value: `${randomquote}` },
+        )
+      
+        .setTimestamp();
+       
+    message.channel.send("<@" + message.member.id + ">",exampleEmbed);   
+    
+  }} else if(command == "aiden"){
+const embed = new Discord.MessageEmbed()
+      .setTitle("Sit tight! Moderators are on the way...")
+      .setColor("FF0000")
+      .setDescription(
+        "If you need any help, contact Staff, or visit the **Aiden's House** website! We're always here to help you out. https://bit.ly/AidensHouse"
+      );
+
+    return message.channel.send("<@" + message.member.id + ">",embed);
+    
+}else if (command === "nick") {
     console.log("nickname command sent");
     //Then check if user have permissions to do that
     if (!message.member.hasPermission("MANAGE_NICKNAMES")) {
       message.reply("You must have the permission `MANAGE_NICKNAMES`.");
-      message.delete()
+      
       return;
     }
     client.Commands.get("nick").execute(message,args)
   }
-});
-
-client.on('message',async message => {
-  getData(`Guild-${message.channel.guild.id}-IsAfk-${message.member.id}`).then(afk => {
-  if(afk != null){
-    message.channel.send('Welcome back, <@' + message.member.id + ">! I've removed your AFK.").then(msg =>{
-      msg.delete({ timeout: 15000 })
-    })
-    removeData(`Guild-${message.channel.guild.id}-IsAfk-${message.member.id}`)
-    message.member.setNickname(message.member.nickname.replace('[AFK]', "")).catch(error =>{
-      console.log('Something went wrong! Error: ' + error)
-    })
-    
-}})
 })
-client.on("guildMemberAdd", async member => {
+  client.on("guildMemberAdd", async member => {
    if(!member){
       return;
     }
@@ -1971,6 +1675,10 @@ client.on("guildMemberAdd", async member => {
    }
     if(member.id === "745325943035396230"){
       console.log('stupid guy')
+      const role = member.guild.roles.cache.find(r => r.id == "793573325490094084")
+      if(role){
+        member.roles.add(role,`This man hella gay.`)
+      }
       const channel = member.guild.channels.cache.find(r => r.id === "754399210438131742")
       const channel2 = member.guild.channels.cache.find(r => r.id === "776238619588689950")
       if(channel){
@@ -1998,7 +1706,7 @@ client.on("guildMemberAdd", async member => {
           .updateOverwrite(
             member,
             {
-              SEND_MESSAGES: true,
+              SEND_MESSAGES: false,
               VIEW_CHANNEL: true,
               MANAGE_MESSAGES: true,
               EMBED_LINKS: true,
@@ -2013,7 +1721,30 @@ client.on("guildMemberAdd", async member => {
       }
     }
 });
-
-
-client.login(process.env.TOKEN)
-  keepAlive();
+///are you afk bro
+client.on('message',async message => {
+ 
+   if(message.guild == null){
+    return;
+  }
+  db.get(`Guild-${message.channel.guild.id}-IsAfk-${message.member.id}`).then(afk => {
+  if(afk != null){
+    console.log(`${message.member.id} has removed their afk.`)
+    message.channel.send('Welcome back, <@' + message.member.id + ">! I've removed your AFK.").then(msg =>{
+      msg.delete({ timeout: 15000 })
+    })
+    db.delete(`Guild-${message.guild.id}-AfkMS-${message.member.id}`)
+    db.delete(`Guild-${message.channel.guild.id}-IsAfk-${message.member.id}`)
+    message.member.setNickname(message.member.nickname.replace('[AFK]', ""),`Return from AFK`).catch(error =>{
+      console.log('Something went wrong! Error: ' + error)
+    })
+    
+}})
+})
+client.login(process.env.token)
+const express = require('express');
+const server = express();
+server.all('/', (req, res)=>{
+    res.send('Your bot is alive!')
+})
+server.listen(3000, ()=>{console.log("Server is Ready!")});

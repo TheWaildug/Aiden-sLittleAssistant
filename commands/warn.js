@@ -61,6 +61,9 @@ module.exports = {
   if(!mentionmember){
     return message.reply('bro you need a user to warn')
   }
+  if(mentionmember.user.bot){
+    return message.reply(`why would you warn a bot idiot.`)
+  }
  if (
     mentionmember.roles.highest.position >= message.member.roles.highest.position
   ) {
