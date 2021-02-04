@@ -6,4 +6,4 @@ const aiden = [
     "adien"
     ]
     
-    module.exports = aiden
+    module.exports = aiden  

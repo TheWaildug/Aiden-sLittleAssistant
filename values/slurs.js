@@ -8,12 +8,11 @@ const slurs = ["nigger",
   "n1gga",
   "faggot",
   "niger",
+  "nigar",
   "negger",
   "nigga",
   "ching chong",
   "negger",
-  "N     I      G       G     E    R",
-  "N      I       G       G      E     R",
   "negga"]
 
   module.exports = slurs

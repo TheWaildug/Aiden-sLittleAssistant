@@ -4,12 +4,18 @@ const prefix = "!"
 const fs = require("fs");
 const fetch = require("node-fetch")
 const ms = require("ms")
-const FF000 = "FF0000"
+
+const topgg = require("@top-gg/sdk")
+const userhook = process.env.userhook
+const deletehook = process.env.deletehook
 const redditFetch = require("reddit-fetch")
+const dmrole = require("./values/dmrole")
 const pings = require("./values/aidenping")
+const servers = require("./values/lockservers")
 const aidens = require('./values/aiden')
 const quotes = require('./values/quotes')
 const facts = require('./values/facts') 
+const rules = require("./values/rules")
 const roles = require('./values/roles')
 const asked = require("./values/asked")
 const slurs = require('./values/slurs')
@@ -36,6 +42,7 @@ const status = await db.get("Status")
 });
 
 })
+
 function iscool(id){
   if(id === '366369929693233163'){
     return true
@@ -47,6 +54,9 @@ function iscool(id){
     return true
   }
   if(id == "745325943035396230"){
+    return true
+  }
+  if(id == "737825820642639883"){
     return true
   }
   return false
@@ -101,12 +111,36 @@ async function IsMuted(user,guild){
   }
 }
 
+
 setInterval(async function(){
- 
+  
    const list = await db.getAll()
   const key = Object.keys(list)
   key.forEach(async function(item, index, array) {
-    
+    if(item.toString().includes(`Guild-752978800756916444-VoteMS`)){
+      const value = Object.values(list)
+      value.forEach(async function(iam,ide,arra){
+        if(ide == index){
+          if(Date.now() >= iam){
+            const userid = item.toString().replace("Guild-752978800756916444-VoteMS-","")
+            console.log("Voting period is over.")
+            const guild = await client.guilds.fetch("752978800756916444")
+            
+            if(guild){
+            
+              db.delete(`Guild-${guild.id}-VoteMS-${userid}`)
+              const role = await guild.roles.fetch("806686361628704849")
+              const user = guild.members.cache.find(r => r.id == userid)
+              
+              if(role && user){
+                user.roles.remove(role,`12 Hour Voting Period Over.`)
+                
+              }
+            }
+          }
+        }
+      })
+    }
     if(item.toString().includes(`Guild-752978800756916444-MuteMS-`)){
       const value = Object.values(list)
       value.forEach(async function(iam,ide,arra){
@@ -125,7 +159,10 @@ setInterval(async function(){
                 message = notsplit.split("/")
                 console.log(message[6])
 
-                const channel = await guild.channels.cache.find(c => c.id == message[5])
+                const channel = await guild.channels.cache.find(c => c.id == message[5])  
+                const embed = new Discord.MessageEmbed()
+                .setTitle(`Moderation`)
+                .setDescription(`New Unmute`)
                 if(channel){
                   channel.send(`Auto Unmuted <@${userid}>. Message link: ${notsplit}`)
                 }
@@ -177,7 +214,7 @@ const oldmsg = oldMessage
 ]
 
     }
-     fetch(process.env.DELETEHOOK, {
+     fetch(deletehook, {
     method: "POST",
     headers: {
         'Content-type': 'application/json'
@@ -235,7 +272,7 @@ if(message.author.bot){
 ]
 
     }
-     fetch(process.env.DELETEHOOK, {
+     fetch(deletehook, {
     method: "POST",
     headers: {
         'Content-type': 'application/json'
@@ -254,9 +291,13 @@ client.on("message",async message => {
   }
  if (message.mentions.members) {
     if (message.mentions.members.first()) {
-      var conti = true;
-      console.log("mention thingy");
-      console.log(message.channel.name)
+      let conti = true;
+      
+    if(message.author.bot){
+        return;
+    }
+     console.log("mention thingy");
+        console.log(message.channel.name)
       message.mentions.members.forEach(user => {
         if(!user){
         return;
@@ -267,6 +308,7 @@ client.on("message",async message => {
       if(message.author.bot){
         return;
       }
+   
       if (message.author.bot && user.id === "366369929693233163") {
         console.log("this a bot boobie");
         conti = false;
@@ -288,15 +330,10 @@ client.on("message",async message => {
      
 
      
-      if (user.id === "772834188189630465" && !message.author.bot) {
-        console.log(message.member.user.tag);
-        on = true;
-        console.log("stop pinging meeeee");
-        message.reply("lol why are you pinging me?");
-        on = false;
-      }
+     
       if (user.id === "366369929693233163" && conti === true) {
         console.log(message.member.user.tag);
+        console.log(message.content)
         on = true;
         console.log("this stupid idiot got pinged");
         const embed = new Discord.MessageEmbed()
@@ -331,6 +368,79 @@ client.on("message",async message => {
 
 
 })
+client.on("guildBanAdd",async (guild, user) => {
+  
+   const fetchedLogs = await guild.fetchAuditLogs({
+		limit: 1,
+		type: 22,
+	});
+  const banlog = fetchedLogs.entries.first();
+  if(!banlog){
+    return console.log(`${user.tag} was banned and that's all we know.`)
+  }
+   let { executor, target } = banlog;
+  
+   console.log(`${executor.username}#${executor.discriminator} banned ${target.tag} with the reason ${reason}.`)
+   const embed = new Discord.MessageEmbed()
+    .setTitle(`GuildMember Update`)
+    .setDescription(`User Banned`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${target.id}>`)
+    .addField(`Sender`,`<@${executor.id}>`)
+
+    .setTimestamp()
+    var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
+
+  "embeds": [embed
+  ]
+    }
+     fetch(userhook, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+})
+client.on("guildBanRemove",async (guild, user) => {
+  
+   const fetchedLogs = await guild.fetchAuditLogs({
+		limit: 1,
+		type: 23,
+	});
+  const banlog = fetchedLogs.entries.first();
+  if(!banlog){
+    return console.log(`${user.tag} was unbanned and that's all we know.`)
+  }
+   let { executor, target } = banlog;
+
+   console.log(`${executor.username}#${executor.discriminator} unbanned ${target.tag} with the reason ${reason}.`)
+   
+   const embed = new Discord.MessageEmbed()
+    .setTitle(`GuildMember Update`)
+    .setDescription(`User Unbanned`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${target.id}>`)
+    .addField(`Sender`,`<@${executor.id}>`)
+
+    .setTimestamp()
+    var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
+
+  "embeds": [embed
+  ]
+    }
+     fetch(userhook, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+})
 client.on("guildMemberUpdate",async (oldmember,newmember) => {
    const fetchedLogs = await oldmember.guild.fetchAuditLogs({
 		limit: 1,
@@ -349,15 +459,16 @@ client.on("guildMemberUpdate",async (oldmember,newmember) => {
   if(reason == null){
     reason = "None."
   }
-  console.log(`${oldmember.user.tag} had ${removedRole} removed by ${executor.tag}.`)
+  console.log(`${oldmember.user.tag} had ${removedRole} removed by ${executor.tag} with the reason ${reason}.`)
   const embed = new Discord.MessageEmbed()
     .setTitle(`GuildMember Update`)
     .setDescription(`Role Remove`)
     .setColor("FF0000")
     .addField(`User`,`<@${newmember.id}>`)
-    .addField(`Role Removed`,removedRole)
+    .addField(`Role Removed`, removedRole)
     .addField(`Reason`,reason)
     .addField(`Changer`,`<@${executor.id}>`)
+     .setTimestamp()
     var peerams = {
          "username": "USER LOGS", // the name of the webhook
     "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
@@ -366,7 +477,56 @@ client.on("guildMemberUpdate",async (oldmember,newmember) => {
 ]
 
     }
-     fetch(process.env.USERHOOK, {
+     fetch(userhook, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+  } 
+   
+ 
+  
+})
+///role added 
+client.on("guildMemberUpdate",async (oldmember,newmember) => {
+   const fetchedLogs = await oldmember.guild.fetchAuditLogs({
+		limit: 1,
+		type: 25,
+	});
+  const roleLog = fetchedLogs.entries.first();
+  if(oldmember.roles.cache.size < newmember.roles.cache.size){
+     if(!roleLog){return console.log(`${oldmember.user.tag} had a role added but we don't know anything else.`)}
+  let { executor, target, changes, reason } = roleLog;
+     let addedrole = ''
+  newmember.roles.cache.forEach(function (value) {
+    if (oldmember.roles.cache.find(id => id == value.id) == null) {
+      addedrole = value.name
+    }
+  })
+  if(reason == null){
+    reason = "None."
+  }
+  console.log(`${oldmember.user.tag} had ${addedrole} added by ${executor.tag} with the reason ${reason}.`)
+  const embed = new Discord.MessageEmbed()
+    .setTitle(`GuildMember Update`)
+    .setDescription(`Role Add`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${newmember.id}>`)
+    .addField(`Role Added`,addedrole)
+    .addField(`Reason`,reason)
+    .addField(`Changer`,`<@${executor.id}>`)
+     .setTimestamp()
+    var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
+
+  "embeds": [embed
+]
+
+    }
+     fetch(userhook, {
     method: "POST",
     headers: {
         'Content-type': 'application/json'
@@ -406,6 +566,7 @@ client.on("guildMemberUpdate", async (oldmember, newmember) => {
     .addField(`User`,`<@${newmember.id}>`)
     .addField(`Old Nickname`,oldmember.displayName)
     .addField(`New Nickname`,newmember.displayName)
+     .setTimestamp()
     var peerams = {
          "username": "USER LOGS", // the name of the webhook
     "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
@@ -414,7 +575,7 @@ client.on("guildMemberUpdate", async (oldmember, newmember) => {
 ]
 
     }
-     fetch(process.env.USERHOOK, {
+     fetch(userhook, {
     method: "POST",
     headers: {
         'Content-type': 'application/json'
@@ -432,6 +593,7 @@ client.on("guildMemberUpdate", async (oldmember, newmember) => {
     .addField(`New Nickname`,newmember.displayName)
     .addField("Reason",reason)
     .addField(`Changer`,`<@${executor.id}>`)
+     .setTimestamp()
      var peerams = {
          "username": "USER LOGS", // the name of the webhook
     "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
@@ -440,7 +602,7 @@ client.on("guildMemberUpdate", async (oldmember, newmember) => {
 ]
 
     }
-     fetch(process.env.USERHOOK, {
+     fetch(userhook, {
     method: "POST",
     headers: {
         'Content-type': 'application/json'
@@ -454,11 +616,14 @@ client.on("message",async message => {
    if(message.guild == null){
     return;
   }
-  
+
 const botuser = message.guild.members.cache.find(r => r.id == "772834188189630465")
   const args = message.content.split(" ")
   if((args[0].toLowerCase() == "i'm" || args[0].toLowerCase() == 'im') && (args[1])){
-      if(args.slice(1).join(' ').includes("@everyone") || args.slice(1).join(' ').includes("@here")){
+    if(message.mentions.members.first()){
+      return message.reply("no, I'm not going to ping them.");
+    }
+      if(args.slice(1).join(' ').includes("@everyone") || args.slice(1).join(' ').includes("@here") ){
       return message.reply(`You can't make me ping everyone loser.`)
     }
                 message.channel.send(`Hi, ${args.slice(1).join(' ')}, I'm ${botuser.displayName}!`);
@@ -471,9 +636,9 @@ client.on("message",async message => {
     return;
   }
   const args = message.content.split(" ")
- 
+ const msg = args.join("")
    for (var w = 0; w < slurs.length; w++) {
-    if(message.content.toLowerCase().includes(slurs[w])){
+    if(msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes(slurs[w])){
       if (isbypasses(message.member)) {
         return console.log("this dude is important");
       }
@@ -481,7 +646,7 @@ client.on("message",async message => {
       console.log("this man said a naughty slur!");
       console.log(message.member.user.tag);
       console.log(slurs[w]);
-      console.log(message.content);
+      
       const embed = new Discord.MessageEmbed()
         .setTitle(`You're not allowed to say that!`)
         .setColor("FF0000")
@@ -498,7 +663,7 @@ client.on("message",async message => {
 
 if(args[i]){
   if(args[i].toLowerCase() == "ok" || args[i].toLowerCase() == "k" || args[i].toLowerCase() == "okay"){
-  
+
     message.react("🆗")
     
 
@@ -506,38 +671,32 @@ if(args[i]){
   }
     
  
- for (let w = 0; w < swears.length; w++) {
-    let continu = true;
-    if (args[i].toLowerCase() == swears[w]){
-      
-      if (message.member.bot) {
-        console.log("bot");
-        return (continu = false);
+  for (var w = 0; w < swears.length; w++) {
+ 
+    if(msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes(swears[w])){
+         if(message.deleted == true){
+        return;
       }
       if (isbypasses(message.member)) {
-        console.log("this dude is important lol");
-        return (continu = false);
+        return console.log("this dude is important");
       }
-      if (continu === true) {
-    
-        console.log("this man said a naughty word!");
-        console.log(swears[w]);
-        console.log(message.content);
-        console.log(message.member.user.tag);
-        const embed = new Discord.MessageEmbed()
-          .setTitle(`You're not allowed to say that!`)
-          .setColor("FF0000")
-          .setDescription(
-            `NSFW or sexual references are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
-          );
-        message.channel.send(`<@${message.member.id}>`,embed);
+  console.log(msg)
+      console.log("this man said a naughty swear!");
+      console.log(message.member.user.tag);
+      console.log(swears[w]);
       
-        message.delete();
-        break;
-      }
+      const embed = new Discord.MessageEmbed()
+        .setTitle(`You're not allowed to say that!`)
+        .setColor("FF0000")
+        .setDescription(
+          `NSFW or sexual references are not allowed here. Your message has just been sent to Server Staff and will be acted upon shortly.`
+        );
+      message.channel.send(`<@${message.member.id}>`,embed);
+ 
+      message.delete();
+      break;
     }
   }
-    
 }}
 })
 ///Saying words
@@ -546,17 +705,38 @@ client.on("message", async message => {
     return;
   }
   const args = message.content.split(" ")
-  if(message.content.toLowerCase().includes("waildug")){
+ const msg = args.join("")
+  if(msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes("waildug")){
     if(!message.author.bot){
       console.log("boobug")
       console.log(message.channel.name)
       const boobbug = await message.guild.members.fetch("432345618028036097")
-      message.channel.send(`You mean that annoying person`).then(msg => {
+      message.channel.send(`this is to prevent unwanted pings to boobbug`).then(msg => {
         msg.edit(`You mean that annoying person ${boobbug}?`)
       })
     }
   }
-  if (message.content.toLowerCase().includes("aiden")) {
+  if(msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes("evan")){
+    if(!message.author.bot){
+      console.log("evan")
+      console.log(message.channel.name)
+        message.channel.send(`Can y'all like shut the fuck up?`)
+    }
+  }
+   if(msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes("ansh")){
+    if(!message.author.bot){
+      console.log("ansh")
+      console.log(message.channel.name)
+      const ansh = await message.guild.members.fetch("717149032753004625")
+      message.channel.send(`this is to prevent unwanted pings to ansh`).then(msg => {
+        msg.edit(`${ansh} being mean to me!`)
+      })
+    }
+  }
+  const last = await db.get(`Guild-${message.guild.id}-LastAiden-${message.author.id}`)
+  
+    if (msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes("aiden")) {
+if(Date.now() >= last){
     if (!message.author.bot) {
       
       if(message.content.toLowerCase().includes('!aiden')){
@@ -567,37 +747,20 @@ client.on("message", async message => {
       }
       console.log('someone said aiden')
       console.log(message.channel.name)
+      const next = Date.now() + ms("5 seconds")
+      db.set(`Guild-${message.guild.id}-LastAiden-${message.member.id}`,next)
       message.channel.send(
         "Did someone say **Aiden?** I'm pretty sure that's what I heard!"
       );
     }
+}else if(Date.now() < last){
+      return message.reply("can you chill out bro. I can't handle you spamming Aiden over and over again.")
+    }
   }
  
-    if(message.content.toLowerCase().includes("ni||cecar||")){
-     
-   
-      if (isbypasses(message.member)) {
-        return console.log("this dude is important");
-      }
-      
-      console.log("this man said a naughty spoiler bait!");
-      console.log(message.member.user.tag);
-
-      console.log(message.content);
-      const embed = new Discord.MessageEmbed()
-        .setTitle(`You're not allowed to say that!`)
-        .setColor("FF0000")
-        .setDescription(
-          `You are not allowed to abuse spoilers! Your message has just been sent to Server Staff and will be acted upon shortly.`
-        );
-      message.channel.send(`<@${message.member.id}>`,embed);
- 
-      message.delete();
-      
   
   
-  
-    }
+    
   let invites = ['https://discord.gg/',"discord.gg/"]
 
 
@@ -624,7 +787,7 @@ return  message.delete();
 
   if(message.guild != null){for (var i = 0; i < aidens.length; i++){
     for(let w = 0; w < args.length; w++){
-      if (args[w].toLowerCase() == aidens[i]) {
+      if (msg.toLowerCase().replace(/[^a-zA-Z ]/g, "").includes(aidens[i])) {
     if (!message.author.bot) {
      
       console.log('someone said ' + aidens[i])
@@ -666,6 +829,9 @@ function isboob(user){
   if(user == "366369929693233163"){
     return true;
   }
+  if(user == "737825820642639883"){
+    return true;
+  }
   return false
 }
 ///dm
@@ -685,7 +851,7 @@ client.on("message",async message => {
       let evaluated
        
     try {
-      evaluated = await eval(`(async () => { return ${code}})()`);
+      evaluated = await eval(`(async () => {  ${code}})()`);
       console.log(evaluated)
       const embed = new Discord.MessageEmbed()
             .setTitle(`Evaluation`)
@@ -693,7 +859,8 @@ client.on("message",async message => {
             .addField(`Input`,"```js\n" + code + "```")
             .addField(`Output`,"```js\n" + evaluated + "```")
             .setTimestamp()
-            return message.channel.send(`<@${message.author.id}>`,embed);
+             message.author.send(`<@${message.author.id}>`,embed)
+      
     } catch (e) {
       console.log(e)
           const embed = new Discord.MessageEmbed()
@@ -702,7 +869,7 @@ client.on("message",async message => {
           .addField(`Input`,"```js\n" + code + "```")
           .addField(`Error`,"```" + e + "```")
           .setTimestamp()
-          return message.channel.send(`<@${message.author.id}>`,embed);
+           message.author.send(`<@${message.author.id}>`,embed)
 
     }
 }
@@ -718,17 +885,18 @@ client.on("message", async message => {
   const args = message.content.slice(prefix.length).split(" ")
   const command = args.shift().toLowerCase();
   if(command == "eval"){
-    if(isboob(message.member.id) == false){
+  if(isboob(message.author.id) == false){
       return message.reply("You are not allowed to do this!")
     }
+    console.log("Eval")
     
       let code = message.content.split(" ").slice(1).join(" ")
-      console.log(`Evaluate ${message.guild.id}`)
-      console.log(`Evaluate ${message.member.id}`)
+     
+      console.log(`Evaluate ${message.author.id}`)
       let evaluated
        
     try {
-      evaluated = await eval(`(async () => {return ${code}})()`);
+      evaluated = await eval(`(async () => {  ${code}})()`);
       console.log(evaluated)
       const embed = new Discord.MessageEmbed()
             .setTitle(`Evaluation`)
@@ -736,7 +904,10 @@ client.on("message", async message => {
             .addField(`Input`,"```js\n" + code + "```")
             .addField(`Output`,"```js\n" + evaluated + "```")
             .setTimestamp()
-            return message.channel.send(`<@${message.member.id}>`,embed);
+             message.author.send(`<@${message.author.id}>`,embed).catch(() => {
+               return message.channel.send(`Please open your DMs noob.`);
+             })
+            return message.delete();
     } catch (e) {
       console.log(e)
           const embed = new Discord.MessageEmbed()
@@ -745,8 +916,9 @@ client.on("message", async message => {
           .addField(`Input`,"```js\n" + code + "```")
           .addField(`Error`,"```" + e + "```")
           .setTimestamp()
-          return message.channel.send(`<@${message.member.id}>`,embed);
-
+           message.author.send(`<@${message.author.id}>`,embed).catch(() => {
+               return message.channel.send(`Please open your DMs noob.`);})
+return message.delete();
     }
 }else if(command == "mute"){
     console.log('mute command sent')
@@ -886,7 +1058,7 @@ return message.reply("go check it out")
     } else if (message.member.roles.cache.some(r => r.id === role.id)) {
       message.member.roles.remove(role, "Removed with the !gamenight command!");
       return message.channel.send(
-        `<@${message.member.id}> has just removed their Gam  e Night role.`
+        `<@${message.member.id}> has just removed their Game Night role.`
       );
     }
  
@@ -912,6 +1084,23 @@ return message.reply("go check it out")
             { name: "**" + faqq + "**", value: `\n ${faqa}\n`}
         )
         .addField("‎‎","More of our most **frequently asked questions** will appear here soon. Stay tuned.")
+  message.channel.send(exampleEmbed)}else if(command == "rule"){
+    console.log('rule command sent')
+    if(!args[0]){
+      return message.reply("you can read <#762757856373374996> or do !rule (rule num).")
+    }
+     const rulenum = args[0] - 1 
+    if(!rules[rulenum]){
+      return message.reply(`This rule does not exist!`)
+    }
+   
+    console.log(args[0])
+    const rule = rules[rulenum]
+     const exampleEmbed = new Discord.MessageEmbed()
+        .setColor('#E416FF')
+        .setTitle("Rule #" +  args[0] + ":")
+       .setDescription(rule)
+        .addField("‎‎","More rules will be added here soon.")
   message.channel.send(exampleEmbed)}
   else if (command === "whois") {
     let mentionmember;
@@ -948,14 +1137,14 @@ return message.reply("go check it out")
     var rolemap = ""
 console.log(creation)
 console.log(joined)
-   const roles = mentionmember.roles.cache.map(role => role.position).sort()
+   const roles = mentionmember.roles.cache.sort((a,b) => b.position - a.position).array()
     var i;
     var rolenum = 0
     for (i = 0; i < roles.length; i++) {
-      const role = await message.guild.roles.cache.find(r => r.position == roles[i])
+      const role = await message.guild.roles.cache.find(r => r.id == roles[i].id)
       if(role.name != "@everyone"){
         rolenum++
-rolemap = rolemap + " <@&" + role.id + ">,"
+rolemap = rolemap + " <@&" + role.id + "> "
       }
       
     }
@@ -1064,68 +1253,103 @@ console.log(mentionmember.id)
     
       }else if (command === "react") {
 
-    var cont = true;
+   
     console.log("react command sent");
-    var mentionchannel;
-
-    if (message.mentions.channels.first()) {
-      mentionchannel = message.mentions.channels.first();
-    } else {
-      mentionchannel = message.channel.guild.channels.cache.find(
-        r => r.id === args[0]
-      )
-    }
-    if (!mentionchannel) {
-      message.reply("please # a channel or enter its ID .");
-      cont = false;
-    }
-    
-    var msg;
-    console.log(args[1]);
-  
-    mentionchannel.messages.fetch(args[1]).then(msg => {
-      console.log(msg.content);
-
-      if (cont != true) {
-        return;
-      }
-      var reaction = args[2]
-      if(!reaction){
-        return message.reply('bro send me an emoji')
-      }
-      var yes = false;
-      var pleasestop = false;
-      var endloop = false;
-      if (msg) {
-        const perms = message.member.permissionsIn(msg.channel).toArray();
-        perms.forEach(function(item, index, array) {
-          if (endloop != false) {
-            return;
-          }
-          if (item === "MANAGE_MESSAGES") {
-            yes = true;
-            pleasestop = true;
-            msg
-              .react(reaction)
-              .catch(error => {
-                console.warn("Error: " + error);
-                endloop = true;
-                return message.reply("Something went wrong! `" + error + "`");
-              })
-              .then(() => {
-                endloop = true;
-message.delete()
-                return;
-              });
-          }
-        });
-
-        if (yes != true) {
-          return message.delete();
+     if(iscool(message.member.id) == false){
+    return message.delete();
+  }
+  let channel
+  let oh = false
+        let channelid = args[0]
+        if(!args[0].startsWith("<#")){
+          oh = true
+          channelid = message.channel.id
         }
+       console.log(channelid)
+    let cont = true;
+    if (message.mentions.channels.first()) {
+      channel = message.mentions.channels.first();
+    } else {
+      channel = message.channel.guild.channels.cache.find(
+        r => r.id == channelid
+      );
+    }
+    if (!channel) {
+      message.reply("please # a channel or enter its ID .");
+      return;
+    }
+   
+    console.log(channel.name);
+    let msg
+    if(oh == true){
+      if(args[0]){
+        msg = await channel.messages.fetch(args[0])
       }
-    });
-  }else if(command == "join"){
+    }else if(oh == false){
+      if(args[1]){
+         msg = await channel.messages.fetch(args[1])
+      }
+    }
+  
+    
+      console.log(msg.content);
+let reaction
+      
+      if(oh == true){
+      if(args[1]){
+        reaction = args[1]
+      }
+    }else if(oh == false){
+      if(args[2]){
+         reaction = args[2]
+      }
+    }
+      if(!msg){
+        return message.delete();
+      }
+      if(!reaction){
+        return message.delete();
+      }
+    if(msg && reaction){
+      
+      msg.react(reaction).catch(error => {
+        message.reply("you did something. Error: `" + error + "`")
+      })
+      message.delete();
+    }
+  }else if(command == "purge"){
+        
+          console.log(`purge ${message.member.id}`)
+          let perm = false
+          if(!message.member.hasPermission(`MANAGE_MESSAGES`)) return message.delete();
+          const amount = args[0]
+          const perms = message.member.permissionsIn(message.channel).toArray();
+        perms.forEach(async function(item,index,array){
+        
+            if(item == `MANAGE_MESSAGES`){
+                perm = true
+                if (!amount) return message.reply('uh bro i need messages to delete.'); // 
+                if (isNaN(amount)) return message.reply(`uh bro this isn't a number.`); 
+                if (amount > 100) return message.reply('dude only 100 messages can be deleted.'); 
+                if (amount < 1) return message.reply('yeah i will just delete 0 messages.');
+                await message.channel.messages.fetch({ limit: amount  }).then(messages => { // Fetches the messages
+                    message.channel.bulkDelete(messages 
+                )}).catch(error => {
+                  console.log(`Error: ${error}`)
+                   return message.delete();
+                }).then(() => {
+                  console.log("ok")
+                })
+                return;
+              }
+        }); if(perm == false){
+            
+            return message.delete();
+        }
+       
+       
+       
+      }else if(command == "join"){
     if(message.member.id != '432345618028036097'){
       return;
     }
@@ -1194,6 +1418,162 @@ message.delete()
     console.log(msg);
     channel.send(msg);
     return message.delete()
+  }else if(command == "serverunlock"){
+    if(!iscool(message.member.id)){
+      return message.delete();
+    } 
+    let stop = false
+    let current2 = false
+    const ad = await message.guild.channels.cache.find(r => r.id == "754401455724560527")
+    const everyone = message.guild.roles.cache.find(
+          r => r.id === "761260746516070400"
+        );
+        
+        let canchat = ad.permissionsFor(everyone).serialize();
+        
+        if (canchat.SEND_MESSAGES == true) {
+         current2 = true
+           message.reply(`<#${ad.id}> is already unlocked.`);
+        }
+        if(current2 == false){
+          ad.updateOverwrite(
+                everyone,
+                {
+                  SEND_MESSAGES: true
+                },
+                `Server Unlocked by ${message.author.tag}`
+              ).catch(error => {
+                message.reply(`Something went wrong! \` ${error} \``)
+              }).then(() => {
+                const embed = new Discord.MessageEmbed()
+                  .setTitle("This channel has been server unlocked by a staff member.")
+                  .setColor("FF0000")
+                  .setDescription(`This channel has been server unlocked. You can now chat here.`)
+                    .setFooter(`Server unlocked by ${message.author.tag}`)
+                  .setTimestamp()
+                ad.send(embed);
+                console.log(`Unlocked ${ad.name}`)
+              })
+              
+        }
+            
+   servers.forEach(async (value,index) => {
+    let current = false
+    if(stop == true){
+      return;
+    }
+  
+    const channel = await message.guild.channels.cache.find(r => r.id == value)
+     const everyone = message.guild.roles.cache.find(
+          r => r.name === "@everyone"
+        );
+        
+        let canchat = channel.permissionsFor(everyone).serialize();
+        
+        if (canchat.SEND_MESSAGES == true) {
+         current = true
+          message.reply(`<#${channel.id}> is already unlocked.`);
+        }
+        if(current == false){
+          channel
+              .updateOverwrite(
+                everyone,
+                {
+                  SEND_MESSAGES: true
+                },
+                `Server Unlocked by ${message.author.tag}`
+              ).catch(error => {
+                message.reply(`Something went wrong! \` ${error} \``)
+              }).then(() => {
+                const embed = new Discord.MessageEmbed()
+                  .setTitle("This channel has been server unlocked by a staff member.")
+                  .setColor("FF0000")
+                  .setDescription(`This channel has been server unlocked. You can now chat here.`)
+                    .setFooter(`Server unlocked by ${message.author.tag}`)
+                  .setTimestamp()
+                channel.send(embed);
+                console.log(`Unlocked ${channel.name}`)
+              })
+    
+        }
+            
+  })
+ return message.channel.send("I attempted to unlock all the channels. Please check the logs to double check.");
+  }else if(command == "serverlock"){
+    if(!iscool(message.member.id)){
+      return message.delete();
+    } 
+    let stop = false
+    const ad = await message.guild.channels.cache.find(r => r.id == "754401455724560527")
+    const everyone = message.guild.roles.cache.find(
+          r => r.id === "761260746516070400"
+        );
+        
+        let canchat = ad.permissionsFor(everyone).serialize();
+        
+        if (canchat.SEND_MESSAGES == false) {
+         
+          return message.reply(`<#${ad.id} is already locked.`);
+        }
+        
+            ad.updateOverwrite(
+                everyone,
+                {
+                  SEND_MESSAGES: false
+                },
+                `Server Locked by ${message.author.tag}`
+              ).catch(error => {
+                message.reply(`Something went wrong! \` ${error} \``)
+              }).then(() => {
+                const embed = new Discord.MessageEmbed()
+                  .setTitle("This channel has been server locked by a staff member.")
+                  .setColor("FF0000")
+                  .setDescription(`This channel has been server locked. You cannot chat here.`)
+                    .setFooter(`Server Locked by ${message.author.tag}`)
+                  .setTimestamp()
+                ad.send(embed);
+                console.log(`Locked ${ad.name}`)
+              })
+   servers.forEach(async (value,index) => {
+    
+    if(stop == true){
+      return;
+    }
+ 
+    const channel = await message.guild.channels.cache.find(r => r.id == value)
+     const everyone = message.guild.roles.cache.find(
+          r => r.name === "@everyone"
+        );
+        
+        let canchat = channel.permissionsFor(everyone).serialize();
+        
+        if (canchat.SEND_MESSAGES == false) {
+         
+          return message.reply(`<#${channel.id} is already locked.`);
+        }
+        
+            channel
+              .updateOverwrite(
+                everyone,
+                {
+                  SEND_MESSAGES: false
+                },
+                `Server Locked by ${message.author.tag}`
+              ).catch(error => {
+                message.reply(`Something went wrong! \` ${error} \``)
+              }).then(() => {
+                const embed = new Discord.MessageEmbed()
+                  .setTitle("This channel has been server locked by a staff member.")
+                  .setColor("FF0000")
+                  .setDescription(`This channel has been server locked. You cannot chat here.`)
+                    .setFooter(`Server locked by ${message.author.tag}`)
+                  .setTimestamp()
+                channel.send(embed);
+                console.log(`Locked ${channel.name}`)
+              })
+    
+  })
+ return message.channel.send("I attempted to lock all the channels. Please check the logs to double check.");
   }else if (command === "message") {
     console.log("message command sent");
     if (
@@ -1202,9 +1582,17 @@ message.delete()
       message.reply("I don't think I'm going to let you do this.");
       return message.delete()
     }
-    var channel, mentionchannel;
-
-    var cont = true;
+    let channel, mentionchannel;
+  let oh = false
+        if(!args[0]){
+          args[0] = message.channel.id
+          oh = true
+        }else if(!args[0].startsWith("<#")){
+          oh = true
+          args[0] = message.channel.id
+        }
+       
+    let cont = true;
     if (message.mentions.channels.first()) {
       channel = mentionchannel = message.mentions.channels.first();
     } else {
@@ -1221,8 +1609,17 @@ message.delete()
     }
     console.log(channel.name);
     
-    let e = message.content.split(" ").splice(2).join(" ")
-    
+      let e = " "
+    if(oh == false){
+      if(args[1]){
+          e = message.content.split(" ").slice(2).join(" ")
+      }
+    }else if(oh == true){
+      if(args[0]){
+ e =  message.content.split(" ").slice(1).join(" ")
+      }
+  
+    }
 
     const msg = e;
     if (!msg) {
@@ -1301,35 +1698,55 @@ message.delete()
       }
   }else if (command === "pin") {
 
-    var cont = true;
+  
     console.log("pin command sent");
-    var mentionchannel;
-
+    let channel, mentionchannel;
+  let oh = false
+        if(!args[0]){
+          args[0] = message.channel.id
+          oh = true
+        }else if(!args[0].startsWith("<#")){
+          oh = true
+          args[0] = message.channel.id
+        }
+       
+    let cont = true;
     if (message.mentions.channels.first()) {
-      mentionchannel = message.mentions.channels.first();
+      channel = mentionchannel = message.mentions.channels.first();
     } else {
-      mentionchannel = message.channel.guild.channels.cache.find(
+      channel = mentionchannel = message.channel.guild.channels.cache.find(
         r => r.id === args[0]
-      ).catch(error => {
-        console.log(error)
-      })
+      );
     }
-    if (!mentionchannel) {
+    if (!channel && mentionchannel) {
       message.reply("please # a channel or enter its ID .");
       cont = false;
     }
-    var msg;
-    console.log(args[1]);
+    if (cont == false) {
+      return;
+    }
+    console.log(channel.name);
+     let msg = ""
+    if(oh == false){
+      if(args[1]){
+         msg = await mentionchannel.messages.fetch(args[1])
+      }
+    }else if(oh == true){
+      if(args[0]){
+msg = await mentionchannel.messages.fetch(args[0])
+      }
   
-    mentionchannel.messages.fetch(args[1]).then(msg => {
+    }
+   
+   
       console.log(msg.content);
 
       if (cont != true) {
         return;
       }
-      var yes = false;
-      var pleasestop = false;
-      var endloop = false;
+      let yes = false;
+      let pleasestop = false;
+      let endloop = false;
       if (msg) {
         const perms = message.member.permissionsIn(msg.channel).toArray();
         perms.forEach(function(item, index, array) {
@@ -1360,10 +1777,36 @@ message.delete()
           );
         }
       }
-    });
-  }else if(command == "leaderboard"){
+  }else if(command == "inviteleaderboard"){
+   if(message.member.id != "432345618028036097"){
+         return message.reply(`mean ansh said this ugly and he barf so me no like him.`);
+   }
+
     
-    console.log("leaderboard")
+    console.log(`invite leaderboard ${message.author.id}`)
+    message.reply(`Let me find the top 5 invite leaders...`).then(async me => {
+      message.channel.startTyping()
+      let invites = await message.guild.fetchInvites()
+      let list = invites.sort((a,b) => b.uses - a.uses).array()
+     
+      let user1 = list[0].inviter
+     let user2 = list[1].inviter
+      let user3 = list[2].inviter
+      let user4 = list[3].inviter
+      let user5 = list[4].inviter
+        const format = `Here are the top 5 users: \n1. <@${user1.id}> - Invites: ${list[0].uses} - Code: ${list[0].code}.\n2. <@${user2.id}> - Invites: ${list[1].uses} - Code: ${list[1].code}.\n3. <@${user3.id}> - Invites: ${list[2].uses} - Code: ${list[2].code}.\n4. <@${user4.id}> - Invites: ${list[3].uses} - Code: ${list[3].code}\n5. <@${user5.id}> - Invites: ${list[4].uses} - Code: ${list[4].code}.`
+    
+  setTimeout(() => {
+   message.channel.stopTyping(true)
+   me.delete();
+    message.channel.send("this is to prevent unwanted pings").then(msg => {
+      msg.edit(format)
+    })
+  },10000)
+  })
+  }else if(command == "roleleaderboard"){
+    
+    console.log("role leaderboard " + message.member.id)
   
    message.reply(`Let me find the top 5 role leaders...`).then(me => {
      message.channel.startTyping()
@@ -1385,6 +1828,14 @@ message.delete()
    })
      
    
+  }else if(command == "kick"){
+    if (!message.member.hasPermission("KICK_MEMBERS")) {
+      console.log("lol imagine not having this permission");
+      message.reply("You must have the permission `KICK_MEMBERS`.");
+      message.delete()
+      return;
+    }
+    client.Commands.get("kick").execute(message,args)
   }else if (command === "ban") {
     console.log("ban command sent");
     if (!message.member.hasPermission("BAN_MEMBERS")) {
@@ -1482,6 +1933,14 @@ message.delete()
       return message.reply("duuuude @ a role or give me an id.")
     }
     console.log(mentionrole.name)
+    let dm = false
+   for (let w = 0; w < dmrole.length; w++) {
+     if(dmrole[w] == mentionrole.id){
+       dm = true
+       break;
+     }
+   }
+   console.log(dm)
     console.log(mentionrole.position)
     console.log(message.member.roles.highest.position)
     console.log(mentionrole.position >= message.member.roles.highest.position)
@@ -1497,6 +1956,7 @@ message.delete()
           
         }).then(() => {
           if(cont == true){
+            
 return message.reply("Successfully removed the role `" + mentionrole.name + "` from <@" + mentionMember.id + ">.")
           }
           
@@ -1509,6 +1969,9 @@ cont = false
           return message.reply("Something went wrong! `" + error + "`");
         }).then(() => { 
           if(cont == true){
+            if(dm == true){
+              mentionMember.send(`You've received the` + " `" + mentionrole.name + "` role because you meet all qualifications.")
+            }
               return message.reply("Successfully gave the role `" + mentionrole.name + "` to <@" + mentionMember.id + ">.")
           }
 
@@ -1543,18 +2006,24 @@ cont = false
   
  
  }else if(command == "edit"){
-   console.log("edit")
+   console.log("edit command sent")
   if(iscool(message.member.id) == false){
     return message.delete();
   }
-   var channel, mentionchannel;
-
-    var cont = true;
+  let channel
+  let oh = false
+        let channelid = args[0]
+        if(!args[0].startsWith("<#")){
+          oh = true
+          channelid = message.channel.id
+        }
+       console.log(channelid)
+    let cont = true;
     if (message.mentions.channels.first()) {
-      channel = mentionchannel = message.mentions.channels.first();
+      channel = message.mentions.channels.first();
     } else {
-      channel = mentionchannel = message.channel.guild.channels.cache.find(
-        r => r.id === args[0]
+      channel = message.channel.guild.channels.cache.find(
+        r => r.id == channelid
       );
     }
     if (!channel && mentionchannel) {
@@ -1565,25 +2034,42 @@ cont = false
       return;
     }
     console.log(channel.name);
-    if(!args[1]){
-      return message.reply(`I need a message id`)
-    }
-    const messageid = args[1]
-  channel.messages.fetch(messageid).then(msg => {
-    console.log(msg.content)
-    const nee = message.content.split(" ").slice(3).join(" ")
-    console.log(nee)
-    if (!nee) {
-      return message.reply("bro I need a message!");
-    }
- 
-    msg.edit(nee)
-    message.delete(); 
-  }).catch(error => {
-    console.log(`Error: ${error}`)
-    message.reply("Something went wrong: `" + error + "`")
-  })
     
+      let e = ""
+      let messageid 
+    if(oh == false){
+      if(args[1]){
+          args[1]
+      }
+    }else if(oh == true){
+      if(args[0]){
+ messageid =  args[0]
+      }
+  
+    }
+console.log(messageid)
+    
+    
+  const msglist = await channel.messages.fetch()
+  const filter = await msglist.filter(mag => mag.id == messageid)
+const msg = filter.first()
+
+    if(oh == false){
+      if(args[2]){
+          e = message.content.split(" ").slice(3).join(" ")
+      }
+    }else if(oh == true){
+      if(args[1]){
+ e =  message.content.split(" ").slice(2).join(" ")
+      }
+  
+    }
+console.log(e)
+ 
+    msg.edit(e)
+    message.delete(); 
+  
+ 
  }else if(command === "ping"){
      var which =  pingthingy()
       console.log(which)
@@ -1641,12 +2127,55 @@ const embed = new Discord.MessageEmbed()
     client.Commands.get("nick").execute(message,args)
   }
 })
+client.on("guildMemberRemove", async member => {
+  console.log(`${member.user.tag} has just left the chat :(.`)
+  const fetchedLogs = await member.guild.fetchAuditLogs({
+		limit: 1,
+		type: 20,
+	});
+const kicklog = fetchedLogs.entries.first();
+if(!kicklog){
+  return;
+}
+let { executor, target, reason } = kicklog;
+if (target.id === member.id) {
+		 if(reason == null){
+     reason = "None."
+   }
+   console.log(`${executor.username}#${executor.discriminator} kicked ${target.tag} with the reason ${reason}.`)
+   const embed = new Discord.MessageEmbed()
+    .setTitle(`GuildMember Update`)
+    .setDescription(`User Kicked`)
+    .setColor("FF0000")
+    .addField(`User`,`<@${target.id}>`)
+    .addField(`Sender`,`<@${executor.id}>`)
+    .addField(`Reason`,`${reason}`)
+    .setTimestamp()
+    var peerams = {
+         "username": "USER LOGS", // the name of the webhook
+    "avatar_url": "https://cdn.discordapp.com/attachments/752989732786667610/794283704447926332/image0.jpg",
+
+  "embeds": [embed
+  ]
+    }
+     fetch(userhook, {
+    method: "POST",
+    headers: {
+        'Content-type': 'application/json'
+    },
+    body: JSON.stringify(peerams)
+})
+	} else {
+		return;
+	}
+})
   client.on("guildMemberAdd", async member => {
    if(!member){
       return;
     }
-  console.log(`What's up, ${member.user.tag}, welcome to Aiden's House!`);
-  member
+  console.log(`${member.user.tag} has just joined the chat.`);
+  if(member.id != "745325943035396230"){
+ member
     .send(
       `Woohoo! Have a wonderful time here at Aiden's House. If you ever need any help, visit the Aiden's House official website. https://bit.ly/AidensHouse`
     )
@@ -1667,6 +2196,8 @@ const embed = new Discord.MessageEmbed()
         
       )
             }
+  }
+ 
      if(await IsMuted(member.id,member.guild.id) == true){
      const muted = member.guild.roles.cache.find(r => r.name === "Muted")
      if(muted){
@@ -1727,7 +2258,7 @@ client.on('message',async message => {
    if(message.guild == null){
     return;
   }
-  db.get(`Guild-${message.channel.guild.id}-IsAfk-${message.member.id}`).then(afk => {
+  db.get(`Guild-${message.guild.id}-IsAfk-${message.author.id}`).then(afk => {
   if(afk != null){
     console.log(`${message.member.id} has removed their afk.`)
     message.channel.send('Welcome back, <@' + message.member.id + ">! I've removed your AFK.").then(msg =>{
@@ -1741,10 +2272,52 @@ client.on('message',async message => {
     
 }})
 })
+
 client.login(process.env.token)
 const express = require('express');
 const server = express();
+const webhook = new topgg.Webhook(process.env.webauth) 
 server.all('/', (req, res)=>{
-    res.send('Your bot is alive!')
+    res.send('ansh is meanie')
 })
 server.listen(3000, ()=>{console.log("Server is Ready!")});
+server.post("/servervote", webhook.middleware(), async (req, res) => {
+  const user = await client.users.fetch(req.vote.user)
+  if(!user){
+    return console.log(`Cannot find user!`)
+  }
+const guild = client.guilds.cache.find(g => g.id == "752978800756916444")
+  if(!guild){
+    return console.log(`Cannot find guild!`);
+  }
+  console.log(`${user.id} has voted for Aiden's House!`)
+  const embed = new Discord.MessageEmbed()
+  .setColor("RANDOM")
+  .setTitle("Thanks For Voting!")
+  .setDescription(`Thanks you for voting for Aiden's House! You will have the "Voted" role in Aiden's House for 12 hours.`)
+  user.send(embed).catch(error => {
+    console.log(`Error: ${error}`)
+  })
+  
+  const channel = guild.channels.cache.find(c => c.id == "806686010612121610")
+  if(!channel){
+    return console.log(`Cannot find channel!`)
+  }
+ const voteembed = new Discord.MessageEmbed()
+  .setColor("RANDOM")
+  .setTitle("Thanks For Voting!")
+  .setDescription(`<@${user.id}>, Thanks you for voting for Aiden's House! You will have the <@&806686361628704849> role in Aiden's House for 12 hours.`)
+  channel.send(voteembed)
+ 
+  const role = guild.roles.cache.find(r => r.id == "806686361628704849")
+  if(!role){
+    return console.log(`Cannot find role!`)
+  }
+  const guildmember = guild.members.cache.find(m => m.id == user.id)
+  if(!guildmember){
+    return console.log(`Cannot find guild member.`)
+  }
+  guildmember.roles.add(role,"Voted for the server!").catch(error => console.log(error))
+  const votems = Date.now() + ms("12 hours")
+db.set(`Guild-${guild.id}-VoteMS-${user.id}`,votems)
+})

@@ -1,16 +1,14 @@
 async function GetMember(guild, id) {
-  let member = await guild.members.fetch(id);
+  let member = await guild.members.cache.find(r => r.id == id);
   return member;
 }
 module.exports = {
   name: "nick",
   description: "changes nickname",
  async execute(message,args){
-      if (!args[0]) {
-          return message.channel.send("Uh oh. That didn't work!");
-        }
-        var cont = true;
-        var memberto, mentionMember;
+      
+        let cont = true;
+        let memberto, mentionMember;
         //If user dont mention a member, that show him this error msg
         if (message.mentions.members.first()) {
           mentionMember = memberto = message.mentions.members.first();
@@ -28,7 +26,7 @@ module.exports = {
         if (cont != true) {
           return;
         }
-        var member = false;
+        let member = false;
         console.log(memberto.user.tag);
         if (!memberto) {
           return message.reply("please @ a user or their id.");
@@ -67,7 +65,7 @@ module.exports = {
           return;
         }
       
-        var oldnick = mentionMember.displayName;
+        let oldnick = mentionMember.displayName;
         mentionMember
           .setNickname(nick," Changer: " + message.member.user.tag)
           .catch(error => {

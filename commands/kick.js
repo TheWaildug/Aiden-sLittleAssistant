@@ -1,4 +1,4 @@
-const roles = [ "766669582337048607",
+  const roles = [ "766669582337048607",
   "752989243646935091",
   "754465847610834945",
   "752989064977973329",
@@ -18,8 +18,8 @@ function isbypasses(user) {
  return false
 }
 module.exports = {
-  name: "ban",
-  description: "Bans people duh",
+  name: "kick",
+  description: "kicks people duh",
   execute(message,args){
     if (!args[0]) {
     return message.channel.send("Uh oh. That didn't work! Try again.");
@@ -45,10 +45,10 @@ module.exports = {
     return message.reply("Something went wrong.");
   }
   if (memberto.id === message.member.id) {
-    return message.reply("lol you can't ban yourself stupid");
+    return message.reply("lol you can't kick yourself stupid");
   }
   if (memberto.bot) {
-    return message.reply("lol, imagine trying to ban a bot");
+    return message.reply("lol, imagine trying to kick a bot");
   }
   if (
     mentionMember.roles.highest.position >=
@@ -59,13 +59,13 @@ module.exports = {
   }
   if (isbypasses(memberto) === true) {
     return message.reply(
-      "I don't think this guy can be banned. They're like, Superman, or something."
+      "I don't think this guy can be kicked. They're like, Superman, or something."
     );
   }
 
-  if (!memberto.bannable) {
+  if (!memberto.kickable) {
     message.reply(
-      "uh oh! I do not have the proper permissions to ban this user."
+      "uh oh! I do not have the proper permissions to kick this user."
     );
     return;
   }
@@ -79,16 +79,15 @@ let e = message.content.split(" ").slice(2).join(" ")
   }
   mentionMember
     .send(
-      `You have been banned from ${message.channel.guild}. Reason: ` + "`" +
-      args[1] + "`" + `
-      If you'd like to appeal this ban, visit our Ban Appeals website page here. https://bit.ly/36dPGg5`
+      `You have been kicked from ${message.channel.guild}. Reason:` + "`" +
+      args[1]
     )
     .catch(() =>
       console.log(`Uh oh! I can't send a DM to ${memberto.user.tag}.`)
     );
   memberto
     .ban({
-      reason: `Ban by ${message.member.user.tag} | Reason: ` + args[1]
+      reason: `Kick by ${message.member.user.tag} | Reason: ` + args[1]
     })
     .catch(error => {
       console.warn("Error " + error);
@@ -97,7 +96,7 @@ let e = message.content.split(" ").slice(2).join(" ")
     })
     .then(() =>{
       console.log(
-        `We've just banned ${mentionMember.user.tag} with the reason ${
+        `We've just kicked ${mentionMember.user.tag} with the reason ${
         args[1]
         } by ${message.member.user.tag}`
         
@@ -105,7 +104,7 @@ let e = message.content.split(" ").slice(2).join(" ")
      message.delete()
      
   return message.channel.send(
-    `We've just banned ${mentionMember} with the reason ` + "`" + args[1] + "`"
+    `We've just kicked ${mentionMember} with the reason ` + "`" + args[1] + "`"
   ).then(msg =>{
     msg.delete({timeout: 10000})
   })

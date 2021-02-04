@@ -97,7 +97,7 @@ module.exports = {
                   const embed = new Discord.MessageEmbed()
                   .setTitle("This channel has been unlocked by a staff member.")
                     .setColor("FF0000")
-                    .setDescription(`This channel has been unocked. You can now chat here. ${args[1]}`)
+                    .setDescription(`This channel has been unlocked. You can now chat here. ${args[1]}`)
                     .setFooter(`Unlocked by ${message.author.tag}`)
                     .setTimestamp()
                   channel.send(embed);
