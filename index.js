@@ -123,7 +123,7 @@ setInterval(async function(){
         if(ide == index){
           if(Date.now() >= iam){
             const userid = item.toString().replace("Guild-752978800756916444-VoteMS-","")
-            console.log("Voting period is over.")
+            console.log(userid + " voting period is over.")
             const guild = await client.guilds.fetch("752978800756916444")
             
             if(guild){
@@ -904,10 +904,8 @@ client.on("message", async message => {
             .addField(`Input`,"```js\n" + code + "```")
             .addField(`Output`,"```js\n" + evaluated + "```")
             .setTimestamp()
-             message.author.send(`<@${message.author.id}>`,embed).catch(() => {
-               return message.channel.send(`Please open your DMs noob.`);
-             })
-            return message.delete();
+             message.channel.send(`<@${message.author.id}>`,embed)
+            
     } catch (e) {
       console.log(e)
           const embed = new Discord.MessageEmbed()
@@ -916,9 +914,7 @@ client.on("message", async message => {
           .addField(`Input`,"```js\n" + code + "```")
           .addField(`Error`,"```" + e + "```")
           .setTimestamp()
-           message.author.send(`<@${message.author.id}>`,embed).catch(() => {
-               return message.channel.send(`Please open your DMs noob.`);})
-return message.delete();
+           message.channel.send(`<@${message.author.id}>`,embed)
     }
 }else if(command == "mute"){
     console.log('mute command sent')
@@ -2107,15 +2103,22 @@ console.log(e)
     message.channel.send("<@" + message.member.id + ">",exampleEmbed);   
     
   }} else if(command == "aiden"){
-const embed = new Discord.MessageEmbed()
+     const last = await db.get(`Guild-${message.guild.id}-LastAidenCommand-${message.author.id}`)
+     if(Date.now() >= last){
+       const embed = new Discord.MessageEmbed()
       .setTitle("Sit tight! Moderators are on the way...")
       .setColor("FF0000")
       .setDescription(
         "If you need any help, contact Staff, or visit the **Aiden's House** website! We're always here to help you out. https://bit.ly/AidensHouse"
       );
-
+ const next = Date.now() + ms("5 minutes")
+      db.set(`Guild-${message.guild.id}-LastAidenCommand-${message.member.id}`,next)
     return message.channel.send("<@" + message.member.id + ">",embed);
     
+     }else if(Date.now() < last){
+       return message.reply(`You can only run the **!aiden** command every 5 minutes. Please wait another ${ms(last - Date.now(), {long: true})}.`)
+     }
+
 }else if (command === "nick") {
     console.log("nickname command sent");
     //Then check if user have permissions to do that

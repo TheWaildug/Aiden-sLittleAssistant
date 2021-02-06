@@ -70,18 +70,8 @@ module.exports = {
     console.log("higher");
     return message.reply("This user has an equal or higher role.");
   }
-    var i;
-  var reason = "";
-  for (i = 0; i < args.length; i++) {
-    console.log(args[i]);
-    if(i >= "1"){
-      if(reason != ""){
- reason = reason + " " + args[i]
-      }else{
-        reason = args[i]
-      }
-    }
-  }
+   let reason =  message.content.split(" ").slice(2).join(" ")
+ 
   args[1] = reason
   if(!reason){
     return message.reply("duude I need a reason.")
