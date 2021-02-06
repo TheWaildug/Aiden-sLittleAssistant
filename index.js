@@ -387,7 +387,7 @@ client.on("guildBanAdd",async (guild, user) => {
     .setColor("FF0000")
     .addField(`User`,`<@${target.id}>`)
     .addField(`Sender`,`<@${executor.id}>`)
-
+    .addField(`Guild`,guild.id)
     .setTimestamp()
     var peerams = {
          "username": "USER LOGS", // the name of the webhook
@@ -424,7 +424,7 @@ client.on("guildBanRemove",async (guild, user) => {
     .setColor("FF0000")
     .addField(`User`,`<@${target.id}>`)
     .addField(`Sender`,`<@${executor.id}>`)
-
+    .addField(`Guild`,guild.id)
     .setTimestamp()
     var peerams = {
          "username": "USER LOGS", // the name of the webhook
@@ -442,6 +442,7 @@ client.on("guildBanRemove",async (guild, user) => {
 })
 })
 client.on("guildMemberUpdate",async (oldmember,newmember) => {
+
    const fetchedLogs = await oldmember.guild.fetchAuditLogs({
 		limit: 1,
 		type: 25,
@@ -468,6 +469,7 @@ client.on("guildMemberUpdate",async (oldmember,newmember) => {
     .addField(`Role Removed`, removedRole)
     .addField(`Reason`,reason)
     .addField(`Changer`,`<@${executor.id}>`)
+    .addField(`Guild`,newmember.guild.id)
      .setTimestamp()
     var peerams = {
          "username": "USER LOGS", // the name of the webhook
