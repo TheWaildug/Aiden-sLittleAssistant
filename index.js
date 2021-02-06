@@ -2285,6 +2285,7 @@ server.all('/', (req, res)=>{
 })
 server.listen(3000, ()=>{console.log("Server is Ready!")});
 server.post("/servervote", webhook.middleware(), async (req, res) => {
+  return;
   const user = await client.users.fetch(req.vote.user)
   if(!user){
     return console.log(`Cannot find user!`)
